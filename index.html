@@ -3641,20 +3641,47 @@
   pastryGrp.position.set(2.4, 1.25, -2.0);
   scene.add(pastryGrp);
 
-  // Meja Saji
-  const sajiPlatter = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.05, 24), Mat.brassGold);
+  // Meja Saji Platter Besar (Menampung 3 Pesanan Sekaligus)
+  const sajiPlatter = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.06, 0.65), Mat.brassGold);
   sajiPlatter.position.set(0.8, 1.23, -2.0);
+  sajiPlatter.castShadow = true;
   scene.add(sajiPlatter);
 
-  const sajiCoffeeProp = new THREE.Group();
-  const sajiCup = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.09, 0.28, 16), Mat.shirtWhite);
-  const sajiCupRim = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.02, 8, 16), Mat.shirtWhite);
-  sajiCupRim.rotation.x = Math.PI / 2;
-  sajiCupRim.position.y = 0.14;
-  sajiCoffeeProp.add(sajiCup, sajiCupRim);
-  sajiCoffeeProp.position.set(0.8, 1.4, -2.0);
-  sajiCoffeeProp.visible = false;
-  scene.add(sajiCoffeeProp);
+  // 3-Slot 3D Counter Props (Slot 0: Kiri, Slot 1: Tengah, Slot 2: Kanan)
+  const sajiSlots = [];
+  const slotOffsets = [-0.45, 0.0, 0.45];
+  
+  slotOffsets.forEach((ox, idx) => {
+    const slotGroup = new THREE.Group();
+    // 3D Coffee Cup
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.26, 16), Mat.shirtWhite);
+    cup.castShadow = true;
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.02, 8, 16), Mat.shirtWhite);
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = 0.13;
+    // Coffee liquid
+    const liquid = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.02, 12), Mat.coffeeLiquid);
+    liquid.position.y = 0.11;
+    // Steam particle ring
+    const steam = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.015, 6, 12), Mat.steamParticle);
+    steam.rotation.x = Math.PI / 2;
+    steam.position.y = 0.22;
+
+    slotGroup.add(cup, rim, liquid, steam);
+    slotGroup.position.set(0.8 + ox, 1.38, -2.0);
+    slotGroup.visible = false;
+    scene.add(slotGroup);
+    sajiSlots.push(slotGroup);
+  });
+
+  const sajiCoffeeProp = sajiSlots[1]; // fallback alias
+  const readyDrinksOnCounter = [];
+
+  function updateCounterProps() {
+    sajiSlots.forEach((slot, idx) => {
+      slot.visible = (idx < readyDrinksOnCounter.length);
+    });
+  }
 
   const stations = {
     grinder: { pos: new THREE.Vector3(-3.8, 0, -4.6), ring: createFloorRing(-3.8, -4.6, 0xb45309), name: 'Grinder Biji Kopi', action: 'Giling Biji Kopi Fresh' },
@@ -3729,6 +3756,21 @@
   barista.root.position.set(-1.0, 0, -3.85);
   scene.add(barista.root);
 
+  // 3D Floating Speech Bubble for Barista Sarah
+  const baristaBubble = document.createElement('div');
+  baristaBubble.className = 'order-bubble';
+  baristaBubble.innerHTML = `
+    <div class="order-bubble-card border-amber-400 bg-amber-950/90 text-amber-100 shadow-amber-900/40">
+      <span class="text-xl">👩‍🍳</span>
+      <div class="flex flex-col">
+        <span class="font-outfit font-extrabold text-xs text-amber-200">Barista Sarah</span>
+        <span id="barista-bubble-status" class="text-[10px] text-amber-300 font-medium">Meracik 3 Pesanan...</span>
+      </div>
+    </div>
+    <div class="order-bubble-tail border-t-amber-400"></div>
+  `;
+  document.getElementById('bubble-container').appendChild(baristaBubble);
+
   // 3. Waiter Andi
   const waiter = createHumanoid({
     skinMat: Mat.skin,
@@ -3739,6 +3781,28 @@
   });
   waiter.root.position.set(3.5, 0, 0.5);
   scene.add(waiter.root);
+
+  // 3D Floating Speech Bubble for Waiter Andi
+  const waiterBubble = document.createElement('div');
+  waiterBubble.className = 'order-bubble';
+  waiterBubble.innerHTML = `
+    <div class="order-bubble-card border-cyan-400 bg-slate-900/90 text-cyan-100 shadow-cyan-900/40">
+      <span class="text-xl">🤵</span>
+      <div class="flex flex-col">
+        <span class="font-outfit font-extrabold text-xs text-cyan-200">Pelayan Andi</span>
+        <span id="waiter-bubble-status" class="text-[10px] text-cyan-300 font-medium">Siap Mengantar</span>
+      </div>
+    </div>
+    <div class="order-bubble-tail border-t-cyan-400"></div>
+  `;
+  document.getElementById('bubble-container').appendChild(waiterBubble);
+
+  function updateStaffBubble(bubbleEl, text) {
+    if (!bubbleEl) return;
+    const statusEl = bubbleEl.querySelector('span[id$="-bubble-status"]');
+    if (statusEl) statusEl.innerText = text;
+    bubbleEl.style.display = 'flex';
+  }
 
   /* ==========================================================================
      12. DINING TABLES & ARMCHAIRS
@@ -3801,7 +3865,7 @@
   /* ==========================================================================
      13. AUTONOMOUS BARISTA SARAH MULTI-MACHINE AI
      ========================================================================== */
-  const readyDrinksOnCounter = [];
+  
 
   const baristaAI = {
     state: 'idle',
@@ -3809,10 +3873,10 @@
     walkCycle: 0,
     target: null,
     targetYaw: Math.PI,
+    batchCount: 3,
 
     update: function(dt) {
       if (barista.knockdown && barista.knockdown.active) return;
-
       this.timer += dt;
 
       // Smoothly rotate barista towards target yaw
@@ -3822,69 +3886,85 @@
       if (this.state === 'idle') {
         barista.setTray(null);
         if (barista.syncBones) barista.syncBones('idle', this.timer, 0, dt);
-        if (this.timer > 1.8) {
+
+        // Check if counter has space (< 3 ready drinks)
+        if (readyDrinksOnCounter.length < 3 && this.timer > 1.2) {
+          this.batchCount = 3 - readyDrinksOnCounter.length;
           this.state = 'walk_grinder';
-          this.target = new THREE.Vector3(-3.2, 0, -4.30); // Zero-clipping working distance
+          this.target = new THREE.Vector3(-3.2, 0, -4.30);
+          updateStaffBubble(baristaBubble, `☕ Menggiling Biji untuk ${this.batchCount} Pesanan Sekaligus!`);
         }
       } else if (this.state === 'walk_grinder') {
         if (this.walkTowards(this.target, dt)) {
           this.state = 'grinding';
           this.timer = 0;
-          this.targetYaw = Math.PI; // Face the grinder machine at z: -5.8
+          this.targetYaw = Math.PI;
         }
       } else if (this.state === 'grinding') {
         this.targetYaw = Math.PI;
         if (barista.syncBones) barista.syncBones('grind', this.timer, 0, dt);
-        if (this.timer > 3.0) {
+        if (this.timer > 2.2) {
           this.state = 'walk_espresso';
-          this.target = new THREE.Vector3(-1.0, 0, -4.30); // Zero-clipping working distance
+          this.target = new THREE.Vector3(-1.0, 0, -4.30);
+          updateStaffBubble(baristaBubble, `🔥 Menyeduh ${this.batchCount} Shot Espresso Bersamaan!`);
         }
       } else if (this.state === 'walk_espresso') {
         if (this.walkTowards(this.target, dt)) {
           this.state = 'brewing';
           this.timer = 0;
-          this.targetYaw = Math.PI; // Face the espresso machine at z: -5.8
+          this.targetYaw = Math.PI;
+          audio.playDing();
         }
       } else if (this.state === 'brewing') {
         this.targetYaw = Math.PI;
         if (barista.syncBones) barista.syncBones('brew', this.timer, 0, dt);
-        if (this.timer > 3.5) {
+        if (this.timer > 2.4) {
           this.state = 'walk_milk';
-          this.target = new THREE.Vector3(1.2, 0, -4.30); // Zero-clipping working distance
+          this.target = new THREE.Vector3(1.2, 0, -4.30);
+          updateStaffBubble(baristaBubble, `🥛 Steam Susu & Racik ${this.batchCount} Minuman/Makanan!`);
         }
       } else if (this.state === 'walk_milk') {
         if (this.walkTowards(this.target, dt)) {
           this.state = 'steaming';
           this.timer = 0;
-          this.targetYaw = Math.PI; // Face the milk steamer at z: -5.8
+          this.targetYaw = Math.PI;
         }
       } else if (this.state === 'steaming') {
         this.targetYaw = Math.PI;
         if (barista.syncBones) barista.syncBones('steam', this.timer, 0, dt);
-        if (this.timer > 3.0) {
+        if (this.timer > 2.2) {
           barista.setTray('coffee');
           this.state = 'walk_front';
-          this.target = new THREE.Vector3(0.8, 0, -3.15); // Zero-clipping front counter distance
+          this.target = new THREE.Vector3(0.8, 0, -3.15);
+          updateStaffBubble(baristaBubble, `✨ Membawa ${this.batchCount} Pesanan ke Meja Saji!`);
         }
       } else if (this.state === 'walk_front') {
         if (this.walkTowards(this.target, dt)) {
           this.state = 'serving';
           this.timer = 0;
-          this.targetYaw = 0; // Face the front service counter at z: -2.0
+          this.targetYaw = 0; // Face front counter
         }
       } else if (this.state === 'serving') {
         this.targetYaw = 0;
         if (barista.syncBones) barista.syncBones('tray', this.timer, 0, dt);
-        if (this.timer > 2.5) {
+        if (this.timer > 1.2) {
+          // Fill counter up to 3 slots!
+          while (readyDrinksOnCounter.length < 3) {
+            readyDrinksOnCounter.push({ type: 'coffee', readyTime: performance.now() });
+          }
+          updateCounterProps();
+          audio.playCash();
           barista.setTray(null);
           this.state = 'walk_back';
-          this.target = new THREE.Vector3(-1.0, 0, -3.85); // Center of aisle
+          this.target = new THREE.Vector3(-1.0, 0, -3.85);
+          updateStaffBubble(baristaBubble, `🛎️ 3 Pesanan Siap Saji! Andi silakan antar!`);
         }
       } else if (this.state === 'walk_back') {
         if (this.walkTowards(this.target, dt)) {
           this.state = 'idle';
           this.timer = 0;
-          this.targetYaw = Math.PI * 0.1; // Friendly natural stance
+          this.targetYaw = Math.PI * 0.1;
+          setTimeout(() => { if (baristaBubble) baristaBubble.style.display = 'none'; }, 2500);
         }
       }
     },
@@ -3901,7 +3981,7 @@
       }
 
       this.walkCycle += dt * 9.5;
-      const speed = 2.0;
+      const speed = 2.4;
       curPos.x += (dx / dist) * speed * dt;
       curPos.z += (dz / dist) * speed * dt;
       this.targetYaw = Math.atan2(dx, dz);
@@ -3913,28 +3993,30 @@
     }
   };
 
-  /* ==========================================================================
-     14. AUTONOMOUS WAITER ANDI AI
-     ========================================================================== */
   const waiterAI = {
     state: 'idle',
     targetTable: null,
     timer: 0,
-    speed: 2.5,
+    speed: 3.2,
     walkCycle: 0,
     restPos: new THREE.Vector3(4.0, 0, 0.5),
     sajiPos: new THREE.Vector3(0.8, 0, -0.8),
+
     update: function(dt) {
       if (waiter.knockdown && waiter.knockdown.active) return;
       this.timer += dt;
+
+      // Find any table with a customer waiting for drinks
       const waitingTable = tables.find(t => t.customer && t.customer.state === 'waiting');
 
       if (this.state === 'idle') {
         waiter.setTray(null);
-        if (waitingTable && (readyDrinksOnCounter.length > 0 || sajiCoffeeProp.visible)) {
+        // If there is a waiting customer AND there is a ready drink on counter:
+        if (waitingTable && readyDrinksOnCounter.length > 0) {
           this.targetTable = waitingTable;
           this.state = 'walk_saji';
           this.timer = 0;
+          updateStaffBubble(waiterBubble, '🏃‍♂️ Mengambil pesanan di Meja Saji...');
         }
       } else if (this.state === 'walk_saji') {
         if (this.walkTowards(this.sajiPos, dt)) {
@@ -3942,39 +4024,70 @@
           this.timer = 0;
         }
       } else if (this.state === 'pickup') {
-        if (this.timer > 0.6) {
-          sajiCoffeeProp.visible = false;
-          readyDrinksOnCounter.pop();
+        if (this.timer > 0.4) {
+          if (readyDrinksOnCounter.length > 0) {
+            readyDrinksOnCounter.pop();
+            updateCounterProps();
+          }
           waiter.setTray('coffee');
-          this.state = 'walk_table';
-          this.timer = 0;
+          
+          // Re-verify waiting customer
+          const curWaiting = tables.find(t => t.customer && t.customer.state === 'waiting');
+          if (curWaiting) {
+            this.targetTable = curWaiting;
+            this.state = 'walk_table';
+            this.timer = 0;
+            updateStaffBubble(waiterBubble, `☕ Mengantar ke Meja ${this.targetTable.id}...`);
+          } else {
+            waiter.setTray(null);
+            this.state = 'walk_rest';
+          }
         }
       } else if (this.state === 'walk_table') {
-        if (!this.targetTable || !this.targetTable.customer) {
-          this.state = 'walk_rest';
-          return;
+        if (!this.targetTable || !this.targetTable.customer || this.targetTable.customer.state !== 'waiting') {
+          const otherWaiting = tables.find(t => t.customer && t.customer.state === 'waiting');
+          if (otherWaiting) {
+            this.targetTable = otherWaiting;
+          } else {
+            waiter.setTray(null);
+            this.state = 'walk_rest';
+            return;
+          }
         }
-        const targetPos = new THREE.Vector3(this.targetTable.pos.x, 0, this.targetTable.pos.z - 1.9);
+
+        const targetPos = new THREE.Vector3(this.targetTable.pos.x, 0, this.targetTable.pos.z - 1.8);
         if (this.walkTowards(targetPos, dt)) {
           this.state = 'serve';
           this.timer = 0;
         }
       } else if (this.state === 'serve') {
-        if (this.timer > 0.8) {
-          if (this.targetTable && this.targetTable.customer) {
-            serveCustomer(this.targetTable.customer, 'Andi');
+        if (this.timer > 0.6) {
+          if (this.targetTable && this.targetTable.customer && this.targetTable.customer.state === 'waiting') {
+            serveCustomer(this.targetTable.customer, 'Pelayan Andi');
+            updateStaffBubble(waiterBubble, '😊 Silakan dinikmati pesanan segarnya!');
           }
           waiter.setTray(null);
-          this.state = 'walk_rest';
-          this.timer = 0;
+
+          // Check if there are more ready drinks and waiting customers:
+          const nextWaiting = tables.find(t => t.customer && t.customer.state === 'waiting');
+          if (nextWaiting && readyDrinksOnCounter.length > 0) {
+            this.targetTable = nextWaiting;
+            this.state = 'walk_saji';
+            this.timer = 0;
+          } else {
+            this.state = 'walk_rest';
+            this.timer = 0;
+          }
         }
       } else if (this.state === 'walk_rest') {
         if (this.walkTowards(this.restPos, dt)) {
           this.state = 'idle';
           waiter.root.rotation.y = -Math.PI / 2;
+          setTimeout(() => { if (waiterBubble) waiterBubble.style.display = 'none'; }, 2000);
         }
       }
     },
+
     walkTowards: function(targetPos, dt) {
       const curPos = waiter.root.position;
       const dx = targetPos.x - curPos.x;
@@ -6211,7 +6324,22 @@
       }
     }
 
-    // 7. Update Pak Budi NPC Speech Bubble Billboard
+    // 7. Update Staff Speech Bubbles (Pak Budi, Barista Sarah, Waiter Andi)
+    const updateBillboard = (entity, bubbleEl, offsetY) => {
+      if (!bubbleEl || bubbleEl.style.display === 'none') return;
+      const headPos = entity.head ? entity.head.getWorldPosition(new THREE.Vector3()) : entity.root.position.clone().add(new THREE.Vector3(0, 1.8, 0));
+      headPos.y += offsetY;
+      headPos.project(camera);
+      if (headPos.z < 1) {
+        const screenX = (headPos.x * 0.5 + 0.5) * window.innerWidth;
+        const screenY = (-(headPos.y * 0.5) + 0.5) * window.innerHeight;
+        bubbleEl.style.left = `${screenX}px`;
+        bubbleEl.style.top = `${screenY}px`;
+      } else {
+        bubbleEl.style.display = 'none';
+      }
+    };
+
     const budiHeadPos = merchantBudi.head.getWorldPosition(new THREE.Vector3());
     budiHeadPos.y += 0.65;
     budiHeadPos.project(camera);
@@ -6224,6 +6352,9 @@
     } else {
       budiBubble.style.display = 'none';
     }
+
+    if (typeof baristaBubble !== 'undefined') updateBillboard(barista, baristaBubble, 0.45);
+    if (typeof waiterBubble !== 'undefined') updateBillboard(waiter, waiterBubble, 0.55);
 
     if (GAME_STATE.cameraMode === 'orbit') {
       controls.update();
