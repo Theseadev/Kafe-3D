@@ -607,11 +607,12 @@
   };
 
   const MENU_ITEMS = [
+    { id: 'matcha_zen', name: 'Matcha Latte Zen Hijau', icon: '🍵', price: 24000, bg: '#15803d', type: 'matcha', req: { matcha: 1, milk: 1 } },
+    { id: 'donut_strawberry', name: 'Donat Strawberry Glaze Pink', icon: '🍩', price: 16000, bg: '#ec4899', type: 'donut', req: { pastry: 1 } },
+    { id: 'strawberry_latte', name: 'Fresh Strawberry Milk Pink', icon: '🍓', price: 22000, bg: '#e11d48', type: 'strawberry', req: { milk: 1, pastry: 1 } },
+    { id: 'croissant_butter', name: 'Butter Croissant Warm', icon: '🥐', price: 16000, bg: '#b45309', type: 'croissant', req: { pastry: 1 } },
     { id: 'kenangan_mantan', name: 'Es Kopi Kenangan Mantan', icon: '🥤', price: 18000, bg: '#78350f', type: 'coffee', req: { beans: 1, milk: 1, aren: 1 } },
-    { id: 'latte_art', name: 'Hot Cafe Latte Art', icon: '☕', price: 22000, bg: '#92400e', type: 'latte', req: { beans: 1, milk: 2 } },
-    { id: 'matcha_zen', name: 'Matcha Latte Zen', icon: '🍵', price: 24000, bg: '#166534', type: 'matcha', req: { matcha: 1, milk: 1 } },
-    { id: 'donut_glazed', name: 'Donat Cokelat Meises', icon: '🍩', price: 15000, bg: '#831843', type: 'donut', req: { pastry: 1 } },
-    { id: 'croissant_butter', name: 'Butter Croissant Warm', icon: '🥐', price: 16000, bg: '#b45309', type: 'croissant', req: { pastry: 1 } }
+    { id: 'latte_art', name: 'Hot Cafe Latte Art', icon: '☕', price: 22000, bg: '#92400e', type: 'latte', req: { beans: 1, milk: 2 } }
   ];
 
   const MARKET_ITEMS = [
@@ -938,11 +939,29 @@
     doorGlass: new THREE.MeshStandardMaterial({ color: 0xd0ebff, transparent: true, opacity: 0.38, roughness: 0.05, metalness: 0.25, side: THREE.DoubleSide }),
     croissantGold: new THREE.MeshStandardMaterial({ color: 0xD9933B, roughness: 0.45 }),
     donutDough: new THREE.MeshStandardMaterial({ color: 0xE8B677, roughness: 0.5 }),
+    donutGlazePink: new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.25, metalness: 0.05 }),
     donutGlazeChoco: new THREE.MeshStandardMaterial({ color: 0x3E1C0A, roughness: 0.35 }),
-    donutGlazePink: new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.35 }),
-    donutSprinkles: new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 }),
-    matchaFoam: new THREE.MeshStandardMaterial({ color: 0x86efac, roughness: 0.5 }),
-    latteFoam: new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.6 }),
+    donutSprinkleYellow: new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 }),
+    donutSprinkleCyan: new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.4 }),
+    donutSprinkleWhite: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 }),
+    
+    // Vivid Matcha & Strawberry Colors
+    matchaGreenCup: new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.35, metalness: 0.1 }),
+    matchaDarkSleeve: new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.5 }),
+    matchaLiquid: new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.3 }),
+    matchaFoam: new THREE.MeshStandardMaterial({ color: 0x86efac, roughness: 0.6 }),
+    
+    strawberryPinkCup: new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.35 }),
+    strawberryPinkGlaze: new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.25 }),
+    strawberryMilkLiquid: new THREE.MeshStandardMaterial({ color: 0xfbcfe8, roughness: 0.3 }),
+    strawberryBerryRed: new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 }),
+    strawberryStemGreen: new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.6 }),
+
+    latteRedCup: new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.35 }),
+    latteArtFoam: new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.5 }),
+    coffeeLiquid: new THREE.MeshStandardMaterial({ color: 0x2e1808, roughness: 0.3 }),
+    coffeeArenDark: new THREE.MeshStandardMaterial({ color: 0x1a0c02, roughness: 0.4 }),
+    coffeeSleeveBrown: new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 }),
     neonGold: new THREE.MeshStandardMaterial({ color: 0xFFB300, emissive: 0xFFA000, emissiveIntensity: 1.4, roughness: 0.2 }),
     lampFilament: new THREE.MeshStandardMaterial({ color: 0xFFEEAA, emissive: 0xFFBB44, emissiveIntensity: 2.2, roughness: 0.1 }),
     matcha: new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.6 }),
@@ -2007,112 +2026,191 @@
 
     const t = (type || '').toLowerCase();
 
-    if (t.includes('donut')) {
-      // 🍩 Ceramic White Plate + Glazed Donut + Sprinkles
-      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.15, 0.02, 20), Mat.shirtWhite);
+    if (t.includes('matcha')) {
+      // =========================================================================
+      // 🍵 MATCHA LATTE ZEN (UNMISTAKABLY VIBRANT GREEN JAPANESE CERAMIC MUG)
+      // =========================================================================
+      // 1. Vibrant Green Outer Ceramic Cup Body
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.075, 0.19, 20), Mat.matchaGreenCup || Mat.matcha);
+      cup.position.y = 0.095;
+      cup.castShadow = true;
+
+      // 2. Dark Green Bamboo Texture Band
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.098, 0.088, 0.06, 20), Mat.matchaDarkSleeve || Mat.matcha);
+      band.position.y = 0.095;
+
+      // 3. Gold Accent Rim Ring
+      const goldRim = new THREE.Mesh(new THREE.TorusGeometry(0.096, 0.008, 8, 20), Mat.brassGold);
+      goldRim.rotation.x = Math.PI / 2;
+      goldRim.position.y = 0.19;
+
+      // 4. Emerald Green Matcha Liquid
+      const matchaLiq = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.088, 0.02, 18), Mat.matchaLiquid || Mat.matcha);
+      matchaLiq.position.y = 0.175;
+
+      // 5. Creamy Lime-Green Matcha Latte Foam Swirl
+      const matchaFoam = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.016, 8, 16), Mat.matchaFoam || Mat.matcha);
+      matchaFoam.rotation.x = Math.PI / 2;
+      matchaFoam.position.y = 0.185;
+
+      // 6. Matching Green Ceramic Handle
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.014, 8, 14, Math.PI), Mat.matchaGreenCup || Mat.matcha);
+      handle.position.set(0.10, 0.095, 0);
+
+      // 7. Green Steam Particle
+      const steam = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.01, 6, 12), Mat.matchaFoam || Mat.matcha);
+      steam.rotation.x = Math.PI / 2;
+      steam.position.y = 0.23;
+
+      group.add(cup, band, goldRim, matchaLiq, matchaFoam, handle, steam);
+
+    } else if (t.includes('donut')) {
+      // =========================================================================
+      // 🍩 DONAT STRAWBERRY GLAZE PINK (PORCELAIN PLATE + VIVID PINK FROSTING + SPRINKLES)
+      // =========================================================================
+      // 1. Porcelain White Plate with Gold Trim
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.16, 0.02, 24), Mat.shirtWhite);
       plate.position.y = 0.01;
       plate.castShadow = true;
-      group.add(plate);
+      const plateGoldRim = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.008, 8, 24), Mat.brassGold);
+      plateGoldRim.rotation.x = Math.PI / 2;
+      plateGoldRim.position.y = 0.02;
+      group.add(plate, plateGoldRim);
 
-      // Donut Dough Ring
-      const donutMesh = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.04, 12, 24), Mat.donutDough);
+      // 2. Baked Golden Donut Dough Ring
+      const donutMesh = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.042, 14, 24), Mat.donutDough);
       donutMesh.rotation.x = Math.PI / 2;
-      donutMesh.position.y = 0.055;
+      donutMesh.position.y = 0.058;
       donutMesh.castShadow = true;
       group.add(donutMesh);
 
-      // Rich Chocolate Glaze Frosting
-      const glazeMesh = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.032, 10, 24, Math.PI * 2), Mat.donutGlazeChoco || Mat.coffeeDark);
-      glazeMesh.rotation.x = Math.PI / 2;
-      glazeMesh.position.y = 0.075;
-      group.add(glazeMesh);
+      // 3. VIVID SWEET PINK STRAWBERRY FROSTING GLAZE
+      const pinkGlaze = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.034, 12, 24, Math.PI * 2), Mat.strawberryPinkGlaze || Mat.donutGlazePink);
+      pinkGlaze.rotation.x = Math.PI / 2;
+      pinkGlaze.position.y = 0.078;
+      group.add(pinkGlaze);
 
-      // Rainbow / Golden Sprinkles
-      for (let s = 0; s < 6; s++) {
-        const ang = (s / 6) * Math.PI * 2;
-        const sp = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.006, 0.025), Mat.donutSprinkles || Mat.neonGold);
-        sp.position.set(Math.cos(ang) * 0.08, 0.095, Math.sin(ang) * 0.08);
-        sp.rotation.y = ang + 0.3;
+      // 4. Multi-Colored Festive Sprinkles (Yellow, Cyan, White)
+      for (let s = 0; s < 8; s++) {
+        const ang = (s / 8) * Math.PI * 2;
+        const spMat = (s % 3 === 0) ? Mat.donutSprinkleYellow : (s % 3 === 1 ? Mat.donutSprinkleCyan : Mat.donutSprinkleWhite);
+        const sp = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.008, 0.028), spMat);
+        sp.position.set(Math.cos(ang) * 0.085, 0.102, Math.sin(ang) * 0.085);
+        sp.rotation.y = ang + 0.4;
         group.add(sp);
       }
-    } else if (t.includes('croissant')) {
-      // 🥐 Ceramic White Plate + Golden Flaky Croissant Crescent
-      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.15, 0.02, 20), Mat.shirtWhite);
-      plate.position.y = 0.01;
-      plate.castShadow = true;
-      group.add(plate);
 
-      const crMesh = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.038, 10, 20, Math.PI * 1.15), Mat.croissantGold);
-      crMesh.rotation.x = Math.PI / 2;
-      crMesh.rotation.z = Math.PI * 0.42;
-      crMesh.position.y = 0.05;
-      crMesh.castShadow = true;
-
-      const centerPuff = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), Mat.croissantGold);
-      centerPuff.scale.set(1.4, 0.9, 1.1);
-      centerPuff.position.set(0, 0.055, 0.03);
-      group.add(plate, crMesh, centerPuff);
-    } else if (t.includes('matcha')) {
-      // 🍵 Matcha Zen Japanese Ceramic Cup + Green Tea Liquid + Matcha Foam
-      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.18, 18), Mat.shirtWhite);
-      cup.position.y = 0.09;
-      cup.castShadow = true;
-
-      const matchaLiq = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.082, 0.02, 16), Mat.matcha);
-      matchaLiq.position.y = 0.165;
-
-      const matchaFoam = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.015, 8, 16), Mat.matchaFoam || Mat.matcha);
-      matchaFoam.rotation.x = Math.PI / 2;
-      matchaFoam.position.y = 0.175;
-
-      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.012, 8, 12, Math.PI), Mat.shirtWhite);
-      handle.position.set(0.095, 0.08, 0);
-      group.add(cup, matchaLiq, matchaFoam, handle);
-    } else if (t.includes('latte')) {
-      // ☕ Hot Cafe Latte Cup + Latte Art Heart Foam
-      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.18, 18), Mat.shirtWhite);
-      cup.position.y = 0.09;
-      cup.castShadow = true;
-
-      const liq = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.082, 0.02, 16), Mat.coffeeDark);
-      liq.position.y = 0.165;
-
-      const latteHeart = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), Mat.latteFoam || Mat.shirtWhite);
-      latteHeart.scale.set(1.2, 0.2, 1.0);
-      latteHeart.position.y = 0.175;
-
-      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.012, 8, 12, Math.PI), Mat.shirtWhite);
-      handle.position.set(0.095, 0.08, 0);
-      group.add(cup, liq, latteHeart, handle);
-    } else if (t.includes('espresso') || t.includes('bean')) {
-      // ☕ Espresso Demitasse / Beans Cup
-      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.14, 16), Mat.shirtWhite);
-      cup.position.y = 0.07;
-      const saucer = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.02, 16), Mat.shirtWhite);
-      saucer.position.y = 0.01;
-      const liq = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.02, 16), Mat.coffeeDark);
-      liq.position.y = 0.125;
-      group.add(saucer, cup, liq);
-    } else {
-      // 🥤 Es Kopi Kenangan Mantan (Signature Cold Tumbler with Straw)
+    } else if (t.includes('strawberry')) {
+      // =========================================================================
+      // 🍓 FRESH STRAWBERRY MILK LATTE (VIVID PASTEL PINK GLASS TUMBLER + CREAM DOME + BERRY)
+      // =========================================================================
+      // 1. Clear Glass Tumbler with Pink Hue
       const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.065, 0.22, 18), Mat.clearGlass);
       cup.position.y = 0.11;
       cup.castShadow = true;
 
-      const liq = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.06, 0.16, 16), Mat.coffeeDark);
-      liq.position.y = 0.09;
+      // 2. Red Strawberry Puree Base Layer
+      const puree = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.062, 0.05, 16), Mat.strawberryBerryRed);
+      puree.position.y = 0.035;
 
-      const milkLayer = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.078, 0.04, 16), Mat.shirtWhite);
-      milkLayer.position.y = 0.18;
+      // 3. Pastel Pink Strawberry Milk Layer
+      const pinkMilk = new THREE.Mesh(new THREE.CylinderGeometry(0.080, 0.072, 0.12, 16), Mat.strawberryMilkLiquid);
+      pinkMilk.position.y = 0.12;
 
+      // 4. Whipped White Cream Top Dome
+      const cream = new THREE.Mesh(new THREE.SphereGeometry(0.075, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.5), Mat.shirtWhite);
+      cream.position.y = 0.20;
+
+      // 5. Fresh Red Strawberry Garnish on Top
+      const berry = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.045, 8), Mat.strawberryBerryRed);
+      berry.rotation.x = Math.PI;
+      berry.position.set(0.02, 0.25, 0);
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.015, 6), Mat.strawberryStemGreen);
+      stem.position.set(0.02, 0.275, 0);
+
+      // 6. Pink Candy Striped Straw
+      const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.26, 8), Mat.strawberryPinkCup);
+      straw.position.set(-0.02, 0.24, 0);
+      straw.rotation.z = 0.22;
+
+      group.add(cup, puree, pinkMilk, cream, berry, stem, straw);
+
+    } else if (t.includes('croissant')) {
+      // =========================================================================
+      // 🥐 BUTTER CROISSANT WARM (WHITE PORCELAIN PLATE + GOLDEN FLAKY CRESCENT)
+      // =========================================================================
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.16, 0.02, 24), Mat.shirtWhite);
+      plate.position.y = 0.01;
+      plate.castShadow = true;
+      group.add(plate);
+
+      const crMesh = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.04, 12, 20, Math.PI * 1.15), Mat.croissantGold);
+      crMesh.rotation.x = Math.PI / 2;
+      crMesh.rotation.z = Math.PI * 0.42;
+      crMesh.position.y = 0.055;
+      crMesh.castShadow = true;
+
+      const centerPuff = new THREE.Mesh(new THREE.SphereGeometry(0.048, 10, 8), Mat.croissantGold);
+      centerPuff.scale.set(1.4, 0.9, 1.1);
+      centerPuff.position.set(0, 0.06, 0.03);
+      group.add(crMesh, centerPuff);
+
+    } else if (t.includes('latte')) {
+      // =========================================================================
+      // ☕ HOT CAFE LATTE ART (CRIMSON RED CERAMIC CUP + HEART FOAM ART)
+      // =========================================================================
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.075, 0.18, 18), Mat.latteRedCup || Mat.espressoRed);
+      cup.position.y = 0.09;
+      cup.castShadow = true;
+
+      const saucer = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.15, 0.02, 20), Mat.latteRedCup || Mat.espressoRed);
+      saucer.position.y = 0.01;
+
+      const liq = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.02, 16), Mat.coffeeLiquid || Mat.coffeeDark);
+      liq.position.y = 0.165;
+
+      const latteHeart = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), Mat.latteArtFoam || Mat.shirtWhite);
+      latteHeart.scale.set(1.3, 0.2, 1.1);
+      latteHeart.position.y = 0.175;
+
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.014, 8, 12, Math.PI), Mat.latteRedCup || Mat.espressoRed);
+      handle.position.set(0.10, 0.09, 0);
+
+      group.add(saucer, cup, liq, latteHeart, handle);
+
+    } else {
+      // =========================================================================
+      // 🥤 ES KOPI KENANGAN MANTAN (SIGNATURE CARAMEL AREN & COFFEE TUMBLER)
+      // =========================================================================
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.065, 0.22, 18), Mat.clearGlass);
+      cup.position.y = 0.11;
+      cup.castShadow = true;
+
+      // Dark Gula Aren Syrup bottom layer
+      const arenLayer = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.062, 0.045, 16), Mat.coffeeArenDark || Mat.coffeeDark);
+      arenLayer.position.y = 0.035;
+
+      // Espresso Coffee Middle Layer
+      const coffeeMid = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.072, 0.10, 16), Mat.coffeeLiquid || Mat.coffeeDark);
+      coffeeMid.position.y = 0.105;
+
+      // Fresh Milk Gradient Top Layer
+      const milkTop = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.078, 0.05, 16), Mat.shirtWhite);
+      milkTop.position.y = 0.175;
+
+      // Brown Cardboard Sleeve
+      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.086, 0.074, 0.08, 18), Mat.coffeeSleeveBrown || Mat.counterFront);
+      sleeve.position.y = 0.11;
+
+      // White Lid & Gold Straw
       const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.02, 16), Mat.shirtWhite);
       lid.position.y = 0.22;
 
-      const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.26, 8), Mat.neonGold);
+      const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.26, 8), Mat.brassGold);
       straw.position.set(0.02, 0.25, 0);
       straw.rotation.z = -0.22;
 
-      group.add(cup, liq, milkLayer, lid, straw);
+      group.add(cup, arenLayer, coffeeMid, milkTop, sleeve, lid, straw);
     }
 
     if (isMini) {
@@ -4063,8 +4161,8 @@
     timer: 0,
     walkCycle: 0,
     target: null,
-    targetYaw: Math.PI,
-    batchCount: 3,
+    targetYaw: Math.PI * 0.1,
+    batchCount: 0,
     batchItems: [],
 
     update: function(dt) {
@@ -4079,38 +4177,81 @@
         barista.setTray(null);
         if (barista.syncBones) barista.syncBones('idle', this.timer, 0, dt);
 
-        // Check if counter has space (< 3 ready drinks)
-        if (readyDrinksOnCounter.length < 3 && this.timer > 1.2) {
-          const needed = 3 - readyDrinksOnCounter.length;
-          this.batchCount = needed;
+        // ⭐ STRICT REQUIREMENT: Sarah ONLY cooks when there is a customer waiting for an unserved order!
+        const waitingTables = tables.filter(t => t.customer && t.customer.state === 'waiting');
 
-          // Determine what items to prepare based on waiting customers' orders first!
-          const waitingCusts = tables.filter(t => t.customer && t.customer.state === 'waiting');
-          this.batchItems = [];
-          
-          for (let i = 0; i < needed; i++) {
-            if (i < waitingCusts.length) {
-              this.batchItems.push(waitingCusts[i].customer.order);
-            } else {
-              const fallback = MENU_ITEMS[(readyDrinksOnCounter.length + i) % MENU_ITEMS.length];
-              this.batchItems.push(fallback);
+        if (waitingTables.length > 0 && readyDrinksOnCounter.length < 3 && this.timer > 0.8) {
+          // Identify unfulfilled customer orders
+          const unservedOrders = [];
+          for (const tbl of waitingTables) {
+            const cust = tbl.customer;
+            // Check if this customer's order is already ready on the counter
+            const onCounterCount = readyDrinksOnCounter.filter(r => r.id === cust.order.id).length;
+            const waitingCount = waitingTables.filter(t => t.customer.order.id === cust.order.id).length;
+            if (onCounterCount < waitingCount) {
+              unservedOrders.push({ order: cust.order, tableId: tbl.id });
             }
           }
 
-          const hasPastry = this.batchItems.some(item => item.type === 'donut' || item.type === 'croissant' || item.id.includes('donut') || item.id.includes('croissant'));
-          const hasMatcha = this.batchItems.some(item => item.type === 'matcha' || item.id.includes('matcha'));
-          const hasCoffee = this.batchItems.some(item => item.type === 'coffee' || item.type === 'latte' || item.id.includes('kenangan') || item.id.includes('latte'));
+          if (unservedOrders.length > 0) {
+            const maxSlots = 3 - readyDrinksOnCounter.length;
+            const batchToMake = unservedOrders.slice(0, maxSlots);
+            this.batchItems = batchToMake.map(p => p.order);
+            this.batchCount = this.batchItems.length;
 
-          this.state = 'walk_grinder';
-          this.target = new THREE.Vector3(-3.2, 0, -4.30);
-          
-          if (hasPastry && !hasCoffee && !hasMatcha) {
-            updateStaffBubble(baristaBubble, `🥐 Menyiapkan Donat & Pastry Fresh (${this.batchCount} Porsi)!`);
-          } else if (hasMatcha && !hasCoffee) {
-            updateStaffBubble(baristaBubble, `🍵 Mengocok Bubuk Matcha Zen Fresh (${this.batchCount} Porsi)!`);
-          } else {
-            updateStaffBubble(baristaBubble, `☕ Meracik ${this.batchCount} Pesanan Kopi, Matcha & Donat!`);
+            const names = this.batchItems.map(b => b.name).join(', ');
+            updateStaffBubble(baristaBubble, `🛎️ Pesanan Masuk! Meracik ${names}...`);
+
+            // Direct Sarah to initial station based on item types
+            const hasPastry = this.batchItems.some(i => i.type === 'donut' || i.type === 'croissant' || i.id.includes('donut') || i.id.includes('croissant'));
+            const hasMatcha = this.batchItems.some(i => i.type === 'matcha' || i.id.includes('matcha'));
+            const hasStrawberry = this.batchItems.some(i => i.type === 'strawberry' || i.id.includes('strawberry'));
+
+            if (hasPastry && !hasMatcha && !hasStrawberry && !this.batchItems.some(i => i.type === 'coffee' || i.type === 'latte')) {
+              this.state = 'walk_pastry';
+              this.target = new THREE.Vector3(2.4, 0, -4.30);
+            } else if (hasMatcha && !this.batchItems.some(i => i.type === 'coffee' || i.type === 'latte')) {
+              this.state = 'walk_matcha';
+              this.target = new THREE.Vector3(3.8, 0, -4.30);
+            } else {
+              this.state = 'walk_grinder';
+              this.target = new THREE.Vector3(-3.2, 0, -4.30);
+            }
+            this.timer = 0;
           }
+        }
+      } else if (this.state === 'walk_pastry') {
+        if (this.walkTowards(this.target, dt)) {
+          this.state = 'heating_pastry';
+          this.timer = 0;
+          this.targetYaw = Math.PI;
+          audio.playDing();
+        }
+      } else if (this.state === 'heating_pastry') {
+        this.targetYaw = Math.PI;
+        if (barista.syncBones) barista.syncBones('steam', this.timer, 0, dt);
+        if (this.timer > 2.0) {
+          const firstType = this.batchItems[0] ? (this.batchItems[0].type || this.batchItems[0].id) : 'donut';
+          barista.setTray(firstType);
+          this.state = 'walk_front';
+          this.target = new THREE.Vector3(0.8, 0, -3.15);
+          updateStaffBubble(baristaBubble, `✨ Membawa ${this.batchCount} Donat/Pastry Hangat ke Meja Saji!`);
+        }
+      } else if (this.state === 'walk_matcha') {
+        if (this.walkTowards(this.target, dt)) {
+          this.state = 'whisking_matcha';
+          this.timer = 0;
+          this.targetYaw = Math.PI;
+          audio.playDing();
+        }
+      } else if (this.state === 'whisking_matcha') {
+        this.targetYaw = Math.PI;
+        if (barista.syncBones) barista.syncBones('grind', this.timer, 0, dt);
+        if (this.timer > 2.0) {
+          barista.setTray('matcha');
+          this.state = 'walk_front';
+          this.target = new THREE.Vector3(0.8, 0, -3.15);
+          updateStaffBubble(baristaBubble, `✨ Membawa ${this.batchCount} Matcha Zen Hijau ke Meja Saji!`);
         }
       } else if (this.state === 'walk_grinder') {
         if (this.walkTowards(this.target, dt)) {
@@ -4124,7 +4265,7 @@
         if (this.timer > 2.0) {
           this.state = 'walk_espresso';
           this.target = new THREE.Vector3(-1.0, 0, -4.30);
-          updateStaffBubble(baristaBubble, `🔥 Menyeduh Espresso & Mengocok Matcha (${this.batchCount} Batch)!`);
+          updateStaffBubble(baristaBubble, `🔥 Menyeduh Espresso & Meracik Minuman (${this.batchCount} Porsi)!`);
         }
       } else if (this.state === 'walk_espresso') {
         if (this.walkTowards(this.target, dt)) {
@@ -4139,7 +4280,7 @@
         if (this.timer > 2.0) {
           this.state = 'walk_milk';
           this.target = new THREE.Vector3(1.2, 0, -4.30);
-          updateStaffBubble(baristaBubble, `🥛 Steam Susu & Menghangatkan Donat/Pastry!`);
+          updateStaffBubble(baristaBubble, `🥛 Steam Susu & Menghias Donat/Latte!`);
         }
       } else if (this.state === 'walk_milk') {
         if (this.walkTowards(this.target, dt)) {
@@ -4167,7 +4308,7 @@
         this.targetYaw = 0;
         if (barista.syncBones) barista.syncBones('tray', this.timer, 0, dt);
         if (this.timer > 1.0) {
-          // Fill counter with the exact prepared batch items!
+          // Deposit the specific prepared items into readyDrinksOnCounter
           if (this.batchItems && this.batchItems.length > 0) {
             this.batchItems.forEach(item => {
               if (readyDrinksOnCounter.length < 3) {
@@ -4182,33 +4323,20 @@
                 });
               }
             });
-          } else {
-            while (readyDrinksOnCounter.length < 3) {
-              const fallback = MENU_ITEMS[readyDrinksOnCounter.length % MENU_ITEMS.length];
-              readyDrinksOnCounter.push({
-                id: fallback.id,
-                name: fallback.name,
-                type: fallback.type || fallback.id,
-                icon: fallback.icon,
-                price: fallback.price,
-                req: fallback.req,
-                readyTime: performance.now()
-              });
-            }
           }
           updateCounterProps();
           audio.playCash();
           barista.setTray(null);
           this.state = 'walk_back';
           this.target = new THREE.Vector3(-1.0, 0, -3.85);
-          updateStaffBubble(baristaBubble, `🛎️ ${this.batchCount} Pesanan Siap Saji! Andi silakan antar!`);
+          updateStaffBubble(baristaBubble, `🛎️ Pesanan Meja Siap! Andi silakan antar!`);
         }
       } else if (this.state === 'walk_back') {
         if (this.walkTowards(this.target, dt)) {
           this.state = 'idle';
           this.timer = 0;
           this.targetYaw = Math.PI * 0.1;
-          setTimeout(() => { if (baristaBubble) baristaBubble.style.display = 'none'; }, 2500);
+          setTimeout(() => { if (baristaBubble && this.state === 'idle') baristaBubble.style.display = 'none'; }, 2000);
         }
       }
     },
@@ -4268,10 +4396,11 @@
             item.type === cust.order.type || 
             item.type === cust.order.id ||
             (cust.order.id.includes('donut') && (item.type === 'donut' || item.id.includes('donut'))) ||
+            (cust.order.id.includes('strawberry') && (item.type === 'strawberry' || item.id.includes('strawberry'))) ||
             (cust.order.id.includes('croissant') && (item.type === 'croissant' || item.id.includes('croissant'))) ||
             (cust.order.id.includes('matcha') && (item.type === 'matcha' || item.id.includes('matcha'))) ||
             (cust.order.id.includes('kenangan') && (item.type === 'coffee' || item.id.includes('kenangan'))) ||
-            (cust.order.id.includes('latte') && (item.type === 'coffee' || item.type === 'latte' || item.id.includes('latte')))
+            (cust.order.id.includes('latte') && (item.type === 'latte' || item.type === 'coffee' || item.id.includes('latte')))
           );
           if (idx !== -1) {
             matchedTable = tbl;
@@ -4311,6 +4440,7 @@
             item.type === this.targetCustomer.order.type || 
             item.type === this.targetCustomer.order.id ||
             (this.targetCustomer.order.id.includes('donut') && (item.type === 'donut' || item.id.includes('donut'))) ||
+            (this.targetCustomer.order.id.includes('strawberry') && (item.type === 'strawberry' || item.id.includes('strawberry'))) ||
             (this.targetCustomer.order.id.includes('croissant') && (item.type === 'croissant' || item.id.includes('croissant'))) ||
             (this.targetCustomer.order.id.includes('matcha') && (item.type === 'matcha' || item.id.includes('matcha')))
           );

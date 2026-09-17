@@ -14,6 +14,30 @@ class GameEngine {
      * Menu Recipe Definitions & Pricing
      */
     public const MENU = [
+        'matcha_zen' => [
+            'name' => 'Matcha Latte Zen Hijau',
+            'price' => 24000,
+            'cost' => 9000,
+            'req' => ['matcha' => 1, 'milk' => 1]
+        ],
+        'donut_strawberry' => [
+            'name' => 'Donat Strawberry Glaze Pink',
+            'price' => 16000,
+            'cost' => 4500,
+            'req' => ['pastry' => 1]
+        ],
+        'strawberry_latte' => [
+            'name' => 'Fresh Strawberry Milk Pink',
+            'price' => 22000,
+            'cost' => 8000,
+            'req' => ['milk' => 1, 'pastry' => 1]
+        ],
+        'croissant_butter' => [
+            'name' => 'Butter Croissant Warm',
+            'price' => 16000,
+            'cost' => 5000,
+            'req' => ['pastry' => 1]
+        ],
         'kenangan_mantan' => [
             'name' => 'Es Kopi Kenangan Mantan',
             'price' => 18000,
@@ -25,24 +49,6 @@ class GameEngine {
             'price' => 22000,
             'cost' => 8000,
             'req' => ['beans' => 1, 'milk' => 2]
-        ],
-        'matcha_zen' => [
-            'name' => 'Matcha Latte Zen',
-            'price' => 24000,
-            'cost' => 9000,
-            'req' => ['matcha' => 1, 'milk' => 1]
-        ],
-        'donut_glazed' => [
-            'name' => 'Donat Cokelat Meises',
-            'price' => 15000,
-            'cost' => 4500,
-            'req' => ['pastry' => 1]
-        ],
-        'croissant_butter' => [
-            'name' => 'Butter Croissant Warm',
-            'price' => 16000,
-            'cost' => 5000,
-            'req' => ['pastry' => 1]
         ]
     ];
     
