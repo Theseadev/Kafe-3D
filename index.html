@@ -1049,6 +1049,12 @@
     cloudFluffy: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true }),
     // Multi-floor & Rooftop Materials
     floorWoodL2: new THREE.MeshStandardMaterial({ color: 0x6e482b, roughness: 0.45, metalness: 0.05 }),
+    // Luxury Elevator & Balcony Materials
+    ledNeonCyan: new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 2.2, roughness: 0.1 }),
+    ledNeonGold: new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xd97706, emissiveIntensity: 2.0, roughness: 0.1 }),
+    balconyWoodDeck: new THREE.MeshStandardMaterial({ color: 0x855431, roughness: 0.5, metalness: 0.05 }),
+    mirrorGlass: new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.02, metalness: 0.95 }),
+
     terrazzoRooftop: new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.65, metalness: 0.1 }),
     glassRailing: new THREE.MeshStandardMaterial({ color: 0xdff2ff, transparent: true, opacity: 0.45, roughness: 0.05, metalness: 0.35, side: THREE.DoubleSide }),
     parasolCanvasRed: new THREE.MeshStandardMaterial({ color: 0xbe123c, roughness: 0.6 }),
@@ -2059,18 +2065,187 @@
      5.2 LEVEL 2 (EXECUTIVE CAFE LOUNGE) & LEVEL 3 (ROOFTOP SKY LOUNGE) ARCHITECTURE
      ========================================================================== */
 
-  // --------------------------------------------------------------------------
-  // A. LANTAI 2: EXECUTIVE CAFE LOUNGE (Ketinggian Y = 5.6m)
+    // --------------------------------------------------------------------------
+  // A. LANTAI 2: EXECUTIVE CAFE LOUNGE & FRONT OUTDOOR BALCONY TERRACE (Y = 5.6m)
   // --------------------------------------------------------------------------
   const cafeLevel2Group = new THREE.Group();
 
-  // 1. Lantai 2 Floor Plank
+  // 1. Lantai 2 Interior Floor (Indoor Parket Jati)
   const floorL2 = new THREE.Mesh(new THREE.BoxGeometry(floorSizeX, 0.18, floorSizeZ), Mat.floorWoodL2);
   floorL2.position.set(0, 5.6, 0);
   floorL2.receiveShadow = true;
   cafeLevel2Group.add(floorL2);
 
-  // 2. Lantai 2 Back Wall (Z = -floorSizeZ/2 = -8.0, Y: 5.6 to 11.2)
+  // 2. Lantai 2 FRONT OUTDOOR BALCONY DECK (Z = 8.0 to 11.8, Y = 5.6)
+  const balconyDepth = 3.8;
+  const balconyDeck = new THREE.Mesh(new THREE.BoxGeometry(floorSizeX, 0.22, balconyDepth), Mat.balconyWoodDeck);
+  balconyDeck.position.set(0, 5.58, floorSizeZ / 2 + balconyDepth / 2);
+  balconyDeck.receiveShadow = true;
+  cafeLevel2Group.add(balconyDeck);
+
+  // Support Beams underneath Balcony Deck
+  [-7.0, -3.5, 0.0, 3.5, 7.0].forEach(bx => {
+    const sBeam = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.35, balconyDepth + 0.2), Mat.darkWalnut);
+    sBeam.position.set(bx, 5.38, floorSizeZ / 2 + balconyDepth / 2);
+    cafeLevel2Group.add(sBeam);
+  });
+
+  // Balcony Perimeter Protective Glass Railing (Tinggi 1.15m)
+  const bRailH = 1.15;
+  const bRailY = 5.6 + bRailH / 2;
+  const bFrontZ = floorSizeZ / 2 + balconyDepth;
+
+  // Front Railing
+  const bGlassFront = new THREE.Mesh(new THREE.BoxGeometry(floorSizeX - 0.4, bRailH, 0.08), Mat.glassRailing);
+  bGlassFront.position.set(0, bRailY, bFrontZ - 0.05);
+  const bHandrailFront = new THREE.Mesh(new THREE.BoxGeometry(floorSizeX, 0.08, 0.12), Mat.brassGold);
+  bHandrailFront.position.set(0, 5.6 + bRailH, bFrontZ - 0.05);
+  cafeLevel2Group.add(bGlassFront, bHandrailFront);
+
+  // Left & Right Balcony Railings
+  [-floorSizeX / 2 + 0.1, floorSizeX / 2 - 0.1].forEach(rx => {
+    const bGlassSide = new THREE.Mesh(new THREE.BoxGeometry(0.08, bRailH, balconyDepth - 0.2), Mat.glassRailing);
+    bGlassSide.position.set(rx, bRailY, floorSizeZ / 2 + balconyDepth / 2);
+    const bHandrailSide = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, balconyDepth), Mat.brassGold);
+    bHandrailSide.position.set(rx, 5.6 + bRailH, floorSizeZ / 2 + balconyDepth / 2);
+    cafeLevel2Group.add(bGlassSide, bHandrailSide);
+  });
+
+  // Balcony Planter Boxes with Colorful Flowers
+  [-6.0, -2.5, 2.5, 6.0].forEach(fx => {
+    const pBox = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.22, 0.28), Mat.darkWalnut);
+    pBox.position.set(fx, 5.6 + 0.15, bFrontZ - 0.22);
+    const pSoil = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.05, 0.24), Mat.treeBarkRealistic);
+    pSoil.position.set(fx, 5.6 + 0.22, bFrontZ - 0.22);
+    cafeLevel2Group.add(pBox, pSoil);
+
+    const fColors = [Mat.flowerRed, Mat.flowerYellow, Mat.flowerPurple, Mat.flowerWhite];
+    for (let fl = -0.9; fl <= 0.9; fl += 0.35) {
+      const fMesh = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), fColors[Math.floor(Math.random() * fColors.length)]);
+      fMesh.position.set(fx + fl, 5.6 + 0.32, bFrontZ - 0.22);
+      cafeLevel2Group.add(fMesh);
+    }
+  });
+
+  // Balcony Outdoor Bistro Tables (2 Sets on Balcony)
+  function createBalconyBistroSet(bx, bz) {
+    const bSet = new THREE.Group();
+    bSet.position.set(bx, 5.6, bz);
+
+    // Marble Bistro Table
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.05, 18), Mat.marbleTop);
+    top.position.y = 0.78;
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.76, 12), Mat.brassGold);
+    leg.position.y = 0.38;
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.35, 0.04, 16), Mat.brassGold);
+    base.position.y = 0.02;
+    bSet.add(top, leg, base);
+
+    // 2 Outdoor Chairs
+    [-0.85, 0.85].forEach((cx, idx) => {
+      const chair = new THREE.Group();
+      chair.position.set(cx, 0, 0);
+      chair.rotation.y = idx === 0 ? Math.PI / 2 : -Math.PI / 2;
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.05, 0.44), Mat.darkWalnut);
+      seat.position.y = 0.45;
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.42, 0.04), Mat.darkWalnut);
+      back.position.set(0, 0.68, 0.2);
+      chair.add(seat, back);
+      bSet.add(chair);
+    });
+
+    cafeLevel2Group.add(bSet);
+  }
+
+  createBalconyBistroSet(-4.8, floorSizeZ / 2 + 1.8);
+  createBalconyBistroSet(4.8, floorSizeZ / 2 + 1.8);
+
+  // 3. Lantai 2 Front Wall (Z = 8.0) with CENTER BALCONY FRENCH DOORWAY
+  // Left Glass Pane (X: -9.0 to -1.8)
+  const fWallL2Left = new THREE.Mesh(new THREE.BoxGeometry(7.2, 4.8, 0.12), Mat.clearGlass);
+  fWallL2Left.position.set(-5.4, 8.0, floorSizeZ / 2);
+  const fWallL2LeftBase = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.6, 0.22), Mat.darkWalnut);
+  fWallL2LeftBase.position.set(-5.4, 5.9, floorSizeZ / 2);
+  const fWallL2LeftTop = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.8, 0.22), Mat.darkWalnut);
+  fWallL2LeftTop.position.set(-5.4, 10.8, floorSizeZ / 2);
+
+  // Right Glass Pane (X: 1.8 to 9.0)
+  const fWallL2Right = new THREE.Mesh(new THREE.BoxGeometry(7.2, 4.8, 0.12), Mat.clearGlass);
+  fWallL2Right.position.set(5.4, 8.0, floorSizeZ / 2);
+  const fWallL2RightBase = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.6, 0.22), Mat.darkWalnut);
+  fWallL2RightBase.position.set(5.4, 5.9, floorSizeZ / 2);
+  const fWallL2RightTop = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.8, 0.22), Mat.darkWalnut);
+  fWallL2RightTop.position.set(5.4, 10.8, floorSizeZ / 2);
+
+  // Door Frame Header (Above Doorway X: -1.8 to 1.8, Y: 8.8 to 11.2)
+  const fDoorHeader = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.4, 0.22), Mat.darkWalnut);
+  fDoorHeader.position.set(0, 10.0, floorSizeZ / 2);
+  cafeLevel2Group.add(fWallL2Left, fWallL2LeftBase, fWallL2LeftTop, fWallL2Right, fWallL2RightBase, fWallL2RightTop, fDoorHeader);
+
+  // 4. ANIMATED BALCONY FRENCH DOORS (Lantai 2 Pintu Keluar ke Balkon)
+  const doorL2LGroup = new THREE.Group();
+  doorL2LGroup.position.set(-1.6, 5.6, floorSizeZ / 2);
+  const doorL2RGroup = new THREE.Group();
+  doorL2RGroup.position.set(1.6, 5.6, floorSizeZ / 2);
+
+  function createBalconyDoorLeaf(isLeft) {
+    const leaf = new THREE.Group();
+    const pivotOffset = isLeft ? 0.78 : -0.78;
+
+    // Door Frame
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(1.56, 3.1, 0.08), Mat.darkWalnut);
+    frame.position.set(pivotOffset, 1.55, 0);
+
+    // Glass Pane
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(1.25, 2.7, 0.04), Mat.doorGlass);
+    glass.position.set(pivotOffset, 1.55, 0);
+
+    // Brass Handle
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.55, 12), Mat.brassGold);
+    handle.position.set(pivotOffset + (isLeft ? 0.6 : -0.6), 1.45, 0.08);
+
+    leaf.add(frame, glass, handle);
+    return leaf;
+  }
+
+  doorL2LGroup.add(createBalconyDoorLeaf(true));
+  doorL2RGroup.add(createBalconyDoorLeaf(false));
+  cafeLevel2Group.add(doorL2LGroup, doorL2RGroup);
+
+  // Balcony Door State Controller
+  const balconyDoorState = {
+    leftGroup: doorL2LGroup,
+    rightGroup: doorL2RGroup,
+    currentAngle: 0,
+    targetAngle: 0,
+    isOpen: false,
+    update: function(dt) {
+      const px = player.root.position.x;
+      const py = player.root.position.y;
+      const pz = player.root.position.z;
+      let shouldOpen = false;
+
+      // Check proximity on Floor 2 (Y ~ 5.6, X: -2.2 to 2.2, Z: 6.5 to 10.5)
+      if (py >= 4.0 && py <= 8.0 && Math.abs(px) <= 2.2 && pz >= 6.5 && pz <= 10.5) {
+        shouldOpen = true;
+      }
+
+      this.targetAngle = shouldOpen ? 1.4 : 0.0; // ~80 degrees outward
+
+      if (shouldOpen && !this.isOpen) {
+        this.isOpen = true;
+        if (audio && audio.playDing) audio.playDing();
+      } else if (!shouldOpen && this.isOpen) {
+        if (this.currentAngle < 0.05) this.isOpen = false;
+      }
+
+      this.currentAngle += (this.targetAngle - this.currentAngle) * Math.min(1.0, dt * 5.0);
+      this.leftGroup.rotation.y = -this.currentAngle;
+      this.rightGroup.rotation.y = this.currentAngle;
+    }
+  };
+
+  // 5. Lantai 2 Back Wall (Z = -floorSizeZ/2 = -8.0, Y: 5.6 to 11.2)
   const backWallL2 = new THREE.Mesh(new THREE.BoxGeometry(floorSizeX, wallH, 0.2), Mat.backWall);
   backWallL2.position.set(0, 5.6 + wallH / 2, -floorSizeZ / 2);
   backWallL2.receiveShadow = true;
@@ -2084,7 +2259,7 @@
     cafeLevel2Group.add(slat);
   }
 
-  // 3. Lantai 2 Art Gallery Posters (3 Lukisan Kopi Mewah)
+  // 6. Lantai 2 Art Gallery Posters (3 Lukisan Kopi Mewah)
   [
     { x: -4.5, title: 'ESPRESSO CRAFT', col: 0xb45309 },
     { x: 0.0, title: 'LATTE ART MASTER', col: 0x7c2d12 },
@@ -2097,18 +2272,7 @@
     cafeLevel2Group.add(frame, canvas);
   });
 
-  // 4. Lantai 2 Front Wall (Z = 8.0, Y: 5.6 to 11.2) -> Panoramic Glass Wall with Brass Railing
-  const frontWallL2Bottom = new THREE.Mesh(new THREE.BoxGeometry(floorSizeX, 0.6, 0.2), Mat.darkWalnut);
-  frontWallL2Bottom.position.set(0, 5.9, floorSizeZ / 2);
-  const frontWallL2Top = new THREE.Mesh(new THREE.BoxGeometry(floorSizeX, 0.8, 0.2), Mat.darkWalnut);
-  frontWallL2Top.position.set(0, 10.8, floorSizeZ / 2);
-  const frontWallL2Glass = new THREE.Mesh(new THREE.BoxGeometry(floorSizeX, 4.3, 0.08), Mat.clearGlass);
-  frontWallL2Glass.position.set(0, 8.35, floorSizeZ / 2);
-  const frontRailingL2 = new THREE.Mesh(new THREE.BoxGeometry(floorSizeX - 0.4, 0.08, 0.08), Mat.brassGold);
-  frontRailingL2.position.set(0, 6.8, floorSizeZ / 2 - 0.15);
-  cafeLevel2Group.add(frontWallL2Bottom, frontWallL2Top, frontWallL2Glass, frontRailingL2);
-
-  // 5. Lantai 2 Left & Right Glass Walls (X = ±9.0, Y: 5.6 to 11.2)
+  // 7. Lantai 2 Left & Right Glass Walls (X = ±9.0, Y: 5.6 to 11.2)
   [-floorSizeX / 2, floorSizeX / 2].forEach(wx => {
     const sideGlass = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.8, floorSizeZ), Mat.clearGlass);
     sideGlass.position.set(wx, 8.3, 0);
@@ -2119,7 +2283,7 @@
     cafeLevel2Group.add(sideGlass, sideBase, sideTop);
   });
 
-  // 6. Lantai 2 Ceiling Plank & Walnut Beams (Y = 11.2)
+  // 8. Lantai 2 Ceiling Plank & Walnut Beams (Y = 11.2)
   const ceilingL2 = new THREE.Mesh(new THREE.BoxGeometry(floorSizeX, 0.15, floorSizeZ), Mat.wallWarmCream);
   ceilingL2.position.set(0, 11.2, 0);
   cafeLevel2Group.add(ceilingL2);
@@ -2129,7 +2293,7 @@
     cafeLevel2Group.add(beam);
   });
 
-  // 7. Lantai 2 Interior Furniture: 4 Luxury Lounge Table Sets
+  // 9. Lantai 2 Interior Furniture: 4 Luxury Lounge Table Sets
   function createLoungeTableSet(tx, tz) {
     const tableGroup = new THREE.Group();
     tableGroup.position.set(tx, 5.6, tz);
@@ -2188,7 +2352,7 @@
   createLoungeTableSet(-4.5, 3.5);
   createLoungeTableSet(0.0, 3.5);
 
-  // 8. Lantai 2 Coffee Library / Bookshelf Nook (X = -7.6, Z = 0.5)
+  // 10. Lantai 2 Coffee Library / Bookshelf Nook (X = -7.6, Z = 0.5)
   const bookshelfGroup = new THREE.Group();
   bookshelfGroup.position.set(-7.6, 5.6, 0.5);
   bookshelfGroup.rotation.y = Math.PI / 2;
@@ -2214,7 +2378,7 @@
 
   cafeLevel2Group.add(bookshelfGroup);
 
-  // 9. Lantai 2 Pendant Dome Lamps
+  // 11. Lantai 2 Pendant Dome Lamps
   [
     [-4.5, -2.0], [0, -2.0],
     [-4.5, 3.5], [0, 3.5]
@@ -2404,17 +2568,18 @@
   scene.add(rooftopGroup);
 
 
+  
   // --------------------------------------------------------------------------
-  // C. 3-LEVEL INTERACTIVE GLASS PANORAMIC ELEVATOR SYSTEM (LIFT KACA KAFE)
+  // C. ULTRA-LUXURY PANORAMIC GLASS CAPSULE ELEVATOR (LIFT KACA KAFE 3-LEVEL)
   // --------------------------------------------------------------------------
   const ELEVATOR_CONFIG = {
     posX: 6.6,
     posZ: -5.0,
-    width: 2.2,
-    depth: 2.2,
+    width: 2.3,
+    depth: 2.3,
     floors: {
-      1: { name: 'Lantai 1: Kafe & Dapur', y: 0.05, icon: '🏢' },
-      2: { name: 'Lantai 2: Executive Lounge', y: 5.6, icon: '🛋️' },
+      1: { name: 'Lantai 1: Kafe Utama & Dapur', y: 0.05, icon: '🏢' },
+      2: { name: 'Lantai 2: Lounge & Balkon Outdoor', y: 5.6, icon: '🛋️' },
       3: { name: 'Lantai 3: Rooftop Sky Lounge', y: 11.2, icon: '🌟' }
     }
   };
@@ -2422,83 +2587,131 @@
   const elevatorShaftGroup = new THREE.Group();
   elevatorShaftGroup.position.set(ELEVATOR_CONFIG.posX, 0, ELEVATOR_CONFIG.posZ);
 
-  // 1. Elevator Vertical Steel Frame (4 Tiang Sudut Vertikal Setinggi 13m)
-  const shaftH = 13.0;
+  // 1. Elevator Vertical Frame & LED Neon Edge Strips (Setinggi 13.5m)
+  const shaftH = 13.5;
   [
     [-ELEVATOR_CONFIG.width / 2, -ELEVATOR_CONFIG.depth / 2],
     [ELEVATOR_CONFIG.width / 2, -ELEVATOR_CONFIG.depth / 2],
     [-ELEVATOR_CONFIG.width / 2, ELEVATOR_CONFIG.depth / 2],
     [ELEVATOR_CONFIG.width / 2, ELEVATOR_CONFIG.depth / 2]
   ].forEach(([cx, cz]) => {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, shaftH, 0.12), Mat.elevatorShaftFrame);
+    // Matte Black Steel Column
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, shaftH, 0.14), Mat.elevatorShaftFrame);
     post.position.set(cx, shaftH / 2, cz);
-    elevatorShaftGroup.add(post);
+    // Glowing Vertical LED Strip
+    const ledStrip = new THREE.Mesh(new THREE.BoxGeometry(0.04, shaftH - 0.2, 0.04), Mat.ledNeonCyan);
+    ledStrip.position.set(cx * 0.96, shaftH / 2, cz * 0.96);
+    elevatorShaftGroup.add(post, ledStrip);
   });
 
-  // 2. Shaft Glass Enclosure (3 Sisi Kaca Tempered)
-  // Back Glass Wall
-  const shaftBackGlass = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width, shaftH, 0.06), Mat.elevatorGlass);
+  // 2. Ultra-Clear Glass Shaft Panels (3 Sisi Kaca Kristal)
+  const shaftBackGlass = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.1, shaftH, 0.05), Mat.elevatorGlass);
   shaftBackGlass.position.set(0, shaftH / 2, -ELEVATOR_CONFIG.depth / 2);
-  // Right Glass Wall
-  const shaftRightGlass = new THREE.Mesh(new THREE.BoxGeometry(0.06, shaftH, ELEVATOR_CONFIG.depth), Mat.elevatorGlass);
+  const shaftRightGlass = new THREE.Mesh(new THREE.BoxGeometry(0.05, shaftH, ELEVATOR_CONFIG.depth - 0.1), Mat.elevatorGlass);
   shaftRightGlass.position.set(ELEVATOR_CONFIG.width / 2, shaftH / 2, 0);
   elevatorShaftGroup.add(shaftBackGlass, shaftRightGlass);
 
-  // Floor Landings & Header Beams for 3 Levels
-  [0, 5.6, 11.2].forEach((fy, flIdx) => {
-    const landingFrame = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width + 0.1, 0.25, 0.12), Mat.elevatorDoorFrame);
-    landingFrame.position.set(0, fy + 2.4, ELEVATOR_CONFIG.depth / 2);
-    // Indicator Call Panel
-    const callButton = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.32, 0.06), Mat.brassGold);
-    callButton.position.set(-ELEVATOR_CONFIG.width / 2 - 0.12, fy + 1.2, ELEVATOR_CONFIG.depth / 2);
-    elevatorShaftGroup.add(landingFrame, callButton);
+  // 3. Landing Portals with Glowing Floor Indicator Displays (Lantai 1, 2, 3)
+  const landingDoorLeaves = [];
+
+  [0.05, 5.6, 11.2].forEach((fy, flIdx) => {
+    const landingFrame = new THREE.Group();
+    landingFrame.position.set(0, fy, ELEVATOR_CONFIG.depth / 2);
+
+    // Archway Gold Frame
+    const archTop = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width + 0.15, 0.35, 0.16), Mat.brassGold);
+    archTop.position.set(0, 2.45, 0);
+    const archPostL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.45, 0.16), Mat.brassGold);
+    archPostL.position.set(-ELEVATOR_CONFIG.width / 2 - 0.02, 1.22, 0);
+    const archPostR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.45, 0.16), Mat.brassGold);
+    archPostR.position.set(ELEVATOR_CONFIG.width / 2 + 0.02, 1.22, 0);
+
+    // Digital LED Floor Indicator Header Screen
+    const dispBox = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.28, 0.08), Mat.blackMetal);
+    dispBox.position.set(0, 2.5, 0.1);
+    const dispScreen = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.2, 0.02), Mat.ledNeonGold);
+    dispScreen.position.set(0, 2.5, 0.15);
+
+    // Call Button Pillar
+    const callButtonBox = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.45, 0.08), Mat.blackMetal);
+    callButtonBox.position.set(-ELEVATOR_CONFIG.width / 2 - 0.18, 1.25, 0.05);
+    const callBtnPill = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 10), Mat.ledNeonCyan);
+    callBtnPill.position.set(-ELEVATOR_CONFIG.width / 2 - 0.18, 1.25, 0.1);
+
+    landingFrame.add(archTop, archPostL, archPostR, dispBox, dispScreen, callButtonBox, callBtnPill);
+    elevatorShaftGroup.add(landingFrame);
+
+    // Landing Sliding Glass Doors (Left & Right)
+    const doorL = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.3, 0.04), Mat.doorGlass);
+    doorL.position.set(-0.48, fy + 1.18, ELEVATOR_CONFIG.depth / 2);
+    const doorR = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.3, 0.04), Mat.doorGlass);
+    doorR.position.set(0.48, fy + 1.18, ELEVATOR_CONFIG.depth / 2);
+
+    elevatorShaftGroup.add(doorL, doorR);
+    landingDoorLeaves.push({ floor: flIdx + 1, doorL, doorR, baseLX: -0.48, baseRX: 0.48 });
   });
 
   scene.add(elevatorShaftGroup);
 
-  // 3. Moving Elevator Cabin (Kabin Bergerak)
+  // 4. Moving Luxury Capsule Cabin (Kabin Kaca Mewah Bergerak)
   const elevatorCabin = new THREE.Group();
   elevatorCabin.position.set(ELEVATOR_CONFIG.posX, 0.05, ELEVATOR_CONFIG.posZ);
 
-  // Cabin Marble Floor
-  const cabFloor = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.15, 0.12, ELEVATOR_CONFIG.depth - 0.15), Mat.elevatorFloorMarble);
-  cabFloor.position.y = 0.06;
+  // Cabin Carrara Marble Floor with Gold Trim
+  const cabFloor = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.12, 0.14, ELEVATOR_CONFIG.depth - 0.12), Mat.marbleTop);
+  cabFloor.position.y = 0.07;
   cabFloor.receiveShadow = true;
+  const cabTrim = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.08, 0.04, ELEVATOR_CONFIG.depth - 0.08), Mat.brassGold);
+  cabTrim.position.y = 0.13;
 
-  // Cabin Roof & Warm Ceiling Light
-  const cabCeiling = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.15, 0.1, ELEVATOR_CONFIG.depth - 0.15), Mat.darkWalnut);
-  cabCeiling.position.y = 2.4;
-  const cabDownlight = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), Mat.lampFilament);
-  cabDownlight.position.y = 2.32;
-  const cabPointLight = new THREE.PointLight(0xffd580, 0.85, 4.5, 1.8);
-  cabPointLight.position.y = 2.2;
+  // Cabin Roof & Halo LED Downlight Dome
+  const cabCeiling = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.12, 0.14, ELEVATOR_CONFIG.depth - 0.12), Mat.darkWalnut);
+  cabCeiling.position.y = 2.45;
+  const cabHaloRing = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.04, 12, 24), Mat.ledNeonGold);
+  cabHaloRing.rotation.x = Math.PI / 2;
+  cabHaloRing.position.y = 2.4;
+  const cabPointLight = new THREE.PointLight(0xfffae0, 1.35, 6.0, 1.5);
+  cabPointLight.position.y = 2.25;
 
-  // Cabin Glass Walls (Back & Right)
-  const cabGlassBack = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.2, 2.25, 0.04), Mat.elevatorGlass);
-  cabGlassBack.position.set(0, 1.2, -ELEVATOR_CONFIG.depth / 2 + 0.1);
-  const cabGlassRight = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.25, ELEVATOR_CONFIG.depth - 0.2), Mat.elevatorGlass);
-  cabGlassRight.position.set(ELEVATOR_CONFIG.width / 2 - 0.1, 1.2, 0);
+  // Cabin Glass Walls (Back & Right Glass with Polished Handrails)
+  const cabGlassBack = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.2, 2.3, 0.04), Mat.elevatorGlass);
+  cabGlassBack.position.set(0, 1.22, -ELEVATOR_CONFIG.depth / 2 + 0.1);
+  const cabGlassRight = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.3, ELEVATOR_CONFIG.depth - 0.2), Mat.elevatorGlass);
+  cabGlassRight.position.set(ELEVATOR_CONFIG.width / 2 - 0.1, 1.22, 0);
 
-  // Cabin Brass Handrails
-  const cabHandrail = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.4, 0.05, 0.05), Mat.brassGold);
-  cabHandrail.position.set(0, 0.95, -ELEVATOR_CONFIG.depth / 2 + 0.16);
+  // Curved Luxury Brass Handrail
+  const cabHandrail = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.35, 0.06, 0.06), Mat.brassGold);
+  cabHandrail.position.set(0, 0.95, -ELEVATOR_CONFIG.depth / 2 + 0.18);
 
-  // Interior Button Panel
-  const cabPanel = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.45, 0.05), Mat.brassGold);
-  cabPanel.position.set(-ELEVATOR_CONFIG.width / 2 + 0.15, 1.25, 0.2);
+  // Cabin Touchscreen Control Panel
+  const cabPanel = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.05), Mat.blackMetal);
+  cabPanel.position.set(-ELEVATOR_CONFIG.width / 2 + 0.16, 1.25, 0.2);
+  const cabPanelScreen = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.55, 0.02), Mat.ledNeonCyan);
+  cabPanelScreen.position.set(-ELEVATOR_CONFIG.width / 2 + 0.17, 1.25, 0.2);
 
-  elevatorCabin.add(cabFloor, cabCeiling, cabDownlight, cabPointLight, cabGlassBack, cabGlassRight, cabHandrail, cabPanel);
+  // Cabin Sliding Glass Doors (Left & Right)
+  const cabDoorL = new THREE.Mesh(new THREE.BoxGeometry(0.85, 2.25, 0.03), Mat.doorGlass);
+  cabDoorL.position.set(-0.45, 1.22, ELEVATOR_CONFIG.depth / 2 - 0.08);
+  const cabDoorR = new THREE.Mesh(new THREE.BoxGeometry(0.85, 2.25, 0.03), Mat.doorGlass);
+  cabDoorR.position.set(0.45, 1.22, ELEVATOR_CONFIG.depth / 2 - 0.08);
+
+  elevatorCabin.add(cabFloor, cabTrim, cabCeiling, cabHaloRing, cabPointLight, cabGlassBack, cabGlassRight, cabHandrail, cabPanel, cabPanelScreen, cabDoorL, cabDoorR);
   scene.add(elevatorCabin);
 
-  // 4. Elevator Controller Object
+  // 5. Intelligent Elevator Controller Object (with Automated Sliding Doors & Audio)
   const ElevatorSystem = {
     currentFloor: 1,
     targetFloor: 1,
     currentY: 0.05,
     targetY: 0.05,
     isMoving: false,
-    speed: 3.2,
+    doorOpenAmount: 1.0, // 0 = closed, 1 = fully open
+    doorTarget: 1.0,
+    speed: 4.2, // Fast, responsive vertical glide
     cabinGroup: elevatorCabin,
+    cabDoorL: cabDoorL,
+    cabDoorR: cabDoorR,
+    landingDoors: landingDoorLeaves,
 
     goToFloor: function(floorNum) {
       if (!ELEVATOR_CONFIG.floors[floorNum]) return;
@@ -2509,10 +2722,11 @@
 
       this.targetFloor = floorNum;
       this.targetY = ELEVATOR_CONFIG.floors[floorNum].y;
+      this.doorTarget = 0.0; // Close doors before moving
       this.isMoving = true;
 
-      showLocationToast('🛗', `Lift Bergerak Menuju ${ELEVATOR_CONFIG.floors[floorNum].name}...`);
-      if (audio && audio.playBrew) audio.playBrew(); // Lift motor whir sound
+      showLocationToast('🛗', `Pintu Menutup... Lift Meluncur ke ${ELEVATOR_CONFIG.floors[floorNum].name}`);
+      if (audio && audio.playBrew) audio.playBrew();
     },
 
     update: function(dt) {
@@ -2526,7 +2740,7 @@
       // Show/hide Elevator Floor Selector HUD
       const hudPanel = document.getElementById('elevator-hud-panel');
       if (hudPanel) {
-        if (distToElevator < 2.5) {
+        if (distToElevator < 2.8) {
           hudPanel.classList.remove('hidden');
           requestAnimationFrame(() => {
             hudPanel.classList.remove('opacity-0', 'scale-95');
@@ -2535,34 +2749,56 @@
         } else {
           hudPanel.classList.remove('opacity-100', 'scale-100');
           hudPanel.classList.add('opacity-0', 'scale-95');
-          setTimeout(() => { if (distToElevator >= 2.5) hudPanel.classList.add('hidden'); }, 200);
+          setTimeout(() => { if (distToElevator >= 2.8) hudPanel.classList.add('hidden'); }, 200);
         }
       }
 
-      // Smooth elevator vertical movement
+      // 1. Sliding Doors Animation (Smooth open/close)
+      const doorSpeed = dt * 4.5;
+      this.doorOpenAmount += (this.doorTarget - this.doorOpenAmount) * Math.min(1.0, doorSpeed);
+
+      // Slide Cabin Doors
+      const maxSlide = 0.72;
+      this.cabDoorL.position.x = -0.45 - this.doorOpenAmount * maxSlide;
+      this.cabDoorR.position.x = 0.45 + this.doorOpenAmount * maxSlide;
+
+      // Slide Active Landing Floor Doors
+      this.landingDoors.forEach(ld => {
+        const isCurrentFloor = (ld.floor === this.currentFloor);
+        const openAmt = isCurrentFloor ? this.doorOpenAmount : 0.0;
+        ld.doorL.position.x = ld.baseLX - openAmt * maxSlide;
+        ld.doorR.position.x = ld.baseRX + openAmt * maxSlide;
+      });
+
+      // 2. Smooth Elevator Movement
       if (this.isMoving) {
-        const step = Math.sign(this.targetY - this.currentY) * Math.min(Math.abs(this.targetY - this.currentY), this.speed * dt);
-        this.currentY += step;
-        this.cabinGroup.position.y = this.currentY;
-
-        // Carry player smoothly with cabin if inside
-        if (isPlayerInside) {
-          player.root.position.y = this.currentY;
-        }
-
-        // Arrival check
-        if (Math.abs(this.currentY - this.targetY) < 0.02) {
-          this.currentY = this.targetY;
+        // Wait until doors are mostly closed before ascending/descending
+        if (this.doorOpenAmount < 0.15) {
+          const dy = this.targetY - this.currentY;
+          const step = Math.sign(dy) * Math.min(Math.abs(dy), this.speed * dt);
+          this.currentY += step;
           this.cabinGroup.position.y = this.currentY;
-          this.currentFloor = this.targetFloor;
-          this.isMoving = false;
 
+          // Carry player smoothly inside elevator
           if (isPlayerInside) {
             player.root.position.y = this.currentY;
           }
 
-          if (audio && audio.playDing) audio.playDing();
-          showLocationToast(ELEVATOR_CONFIG.floors[this.currentFloor].icon, `Tiba di ${ELEVATOR_CONFIG.floors[this.currentFloor].name}!`);
+          // Arrival check
+          if (Math.abs(this.currentY - this.targetY) < 0.02) {
+            this.currentY = this.targetY;
+            this.cabinGroup.position.y = this.currentY;
+            this.currentFloor = this.targetFloor;
+            this.isMoving = false;
+            this.doorTarget = 1.0; // Open doors automatically upon arrival!
+
+            if (isPlayerInside) {
+              player.root.position.y = this.currentY;
+            }
+
+            if (audio && audio.playDing) audio.playDing();
+            showLocationToast(ELEVATOR_CONFIG.floors[this.currentFloor].icon, `Tiba di ${ELEVATOR_CONFIG.floors[this.currentFloor].name}!`);
+          }
         }
       }
     }
@@ -2573,7 +2809,7 @@
   document.getElementById('btn-lift-fl2')?.addEventListener('click', (e) => { e.stopPropagation(); ElevatorSystem.goToFloor(2); });
   document.getElementById('btn-lift-fl3')?.addEventListener('click', (e) => { e.stopPropagation(); ElevatorSystem.goToFloor(3); });
 
-  /* ==========================================================================
+/* ==========================================================================
      10. UNIFIED 3D FOOD & DRINK PROP GENERATOR (Kopi, Matcha, Croissant, Donat)
      ========================================================================== */
   function createFoodOrDrinkProp(itemOrType, isMini = false) {
@@ -5418,12 +5654,22 @@
         pos.x = Math.max(-8.5, Math.min(8.5, pos.x));
         pos.z = Math.max(-7.5, Math.min(7.5, pos.z));
       }
-    } else if (pos.y > 2.8) {
-      // LANTAI 2 (Y = 5.6)
+        } else if (pos.y > 2.8) {
+      // LANTAI 2 (Y = 5.6) + FRONT OUTDOOR BALCONY (Z: 8.0 to 11.6)
       currentObstacles = obstaclesL2;
       if (!isElevatorZone) {
         pos.x = Math.max(-8.5, Math.min(8.5, pos.x));
-        pos.z = Math.max(-7.5, Math.min(7.5, pos.z));
+        // Boundary: Back wall is at Z = -7.5, Front balcony railing is at Z = 11.6!
+        pos.z = Math.max(-7.5, Math.min(11.6, pos.z));
+
+        // Wall collision between indoor and balcony except through doorway (X: [-1.7, 1.7])
+        if (Math.abs(pos.x) > 1.7) {
+          if (pos.z > 7.6 && pos.z < 8.4) {
+            // Push out to either indoor (Z <= 7.6) or outdoor balcony (Z >= 8.4)
+            if (pos.z < 8.0) pos.z = 7.6;
+            else pos.z = 8.4;
+          }
+        }
       }
     } else {
       // LANTAI 1 (Ground Floor)
@@ -7136,6 +7382,7 @@
     // 5. Automatic French Double Doors Open/Close & Chime Controller
     if (doorState && doorState.update) {
       doorState.update(dt);
+    if (typeof balconyDoorState !== 'undefined') balconyDoorState.update(dt);
     }
 
     // 6. Customer Spawning Timer
