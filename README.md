@@ -57,8 +57,11 @@ Game ini dibangun secara *native* di atas **WebGL (Three.js)** dan **Flight PHP*
 - **Siklus Waktu Real-Time**: Perubahan atmosfer langit dari *Subuh*, *Pagi*, *Siang*, *Sore*, hingga *Malam Hari* bertabur bintang dengan pencahayaan matahari dan bulan yang dinamis.
 - **Sistem Cuaca Terpadu**: Efek cuaca *Cerah ☀️*, *Hujan Lebat 🌧️*, dan *Salju Dingin ❄️* yang mempengaruhi selera pesanan pelanggan.
 
-### 🥊 5. Interaksi Fisik & Ragdoll Knockdown
-- Dilengkapi sistem tabrakan spasial (*AABB Collision Resolution*) dan animasi aksi interaktif (Tombol Tonjok [F] / Klik pada NPC).
+### 🏢 6. Arsitektur Kafe 2 Tingkat, Rooftop Sky Lounge & Lift Kaca Interaktif
+- **Lantai 1 (Ground Floor)**: Area kafe utama, dapur 5 mesin barista, kasir POS, etalase pastry, dan pintu masuk ganda.
+- **Lantai 2 (Executive Lounge)**: Ruang santai mewah berlantai parket jati dengan 4 set meja lounge marmer, rak buku *Coffee Library*, dan jendela panorama menghadap desa.
+- **Lantai 3 (Rooftop Sky Lounge)**: Area atap terbuka berlantai teraso modern dengan 3 set meja berpayung kanopi, *Skyline Bar Counter*, sofa lounge outdoor, dan lampu peri (*Fairy String Lights*) yang berpijar hangat di malam hari.
+- **Lift Kaca Panoramik 3-Level**: Poros lift baja vertikal setinggi 13 meter dengan kabin marmer bergerak mulus, panel tombol interaktif, dan notifikasi lantai.
 
 ---
 
@@ -69,6 +72,7 @@ Game ini dibangun secara *native* di atas **WebGL (Three.js)** dan **Flight PHP*
 | <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> / <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> | Berjalan / Navigasi Karakter Pemain |
 | <kbd>Klik / Tap Area</kbd> | Jalan Otomatis (*Auto-Navigation Path*) |
 | <kbd>V</kbd> atau <kbd>C</kbd> | Ganti Sudut Pandang Kamera (*Orbit 3D ⇄ POV Mata*) |
+| <kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> | Pilihan Lantai Lift Kaca (*Lt 1 ⇄ Lt 2 ⇄ Rooftop*) |
 | <kbd>F</kbd> / <kbd>Klik NPC</kbd> | Interaksi Aksi / Tonjok NPC |
 | <kbd>Mouse Drag</kbd> | Memutar Sudut Pandang Kamera (Orbit / FPV Look) |
 | <kbd>Scroll Mouse</kbd> | Zoom In / Zoom Out Kamera |
