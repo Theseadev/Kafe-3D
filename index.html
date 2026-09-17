@@ -197,13 +197,9 @@
   <div id="achievement-toast-container" class="fixed top-12 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2"></div>
 
   <div id="bubble-container" class="pointer-events-none absolute inset-0 z-20 overflow-hidden">
-    <!-- Local Player Nametag & Floating Chat Bubble -->
+    <!-- Local Player Floating Chat Bubble (Nametag removed as requested) -->
     <div id="nametag-local-player" class="absolute pointer-events-none transform -translate-x-1/2 -translate-y-full z-20 transition-opacity">
-      <div class="bg-indigo-950/90 border border-indigo-400/50 backdrop-blur-md px-2.5 py-0.5 rounded-full shadow-lg flex items-center gap-1.5 text-[11px] font-bold text-indigo-200 whitespace-nowrap">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span id="local-player-nametag-text">Kamu (Host)</span>
-      </div>
-      <div id="chat-bubble-local" class="hidden mt-1 bg-white/95 border-2 border-indigo-500 text-stone-900 text-xs font-semibold px-3 py-1.5 rounded-2xl shadow-xl max-w-xs text-center transition-all animate-bounce"></div>
+      <div id="chat-bubble-local" class="hidden bg-white/95 border-2 border-indigo-500 text-stone-900 text-xs font-semibold px-3 py-1.5 rounded-2xl shadow-xl max-w-xs text-center transition-all animate-bounce"></div>
     </div>
   </div>
 
