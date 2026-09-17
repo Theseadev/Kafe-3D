@@ -1723,77 +1723,29 @@
   createPottedTopiary(-2.3, facadeZ + 0.6);
   createPottedTopiary(2.3, facadeZ + 0.6);
 
-  // G. Grand Fascia Signboard with 3D Neon Gold Illumination & Spotlights
-  const facadeSignboard = new THREE.Mesh(new THREE.BoxGeometry(11.0, 1.2, 0.12), Mat.darkWalnut);
-  facadeSignboard.position.set(0, 5.2, facadeZ + 0.16);
+  // G. Grand Fascia Signboard under Balcony Portico (Y = 4.55)
+  const facadeSignboard = new THREE.Mesh(new THREE.BoxGeometry(9.6, 0.75, 0.08), Mat.darkWalnut);
+  facadeSignboard.position.set(0, 4.55, facadeZ + 0.08);
   scene.add(facadeSignboard);
 
-  const facadeSignFrame = new THREE.Mesh(new THREE.BoxGeometry(11.2, 1.3, 0.08), Mat.brassGold);
-  facadeSignFrame.position.set(0, 5.2, facadeZ + 0.12);
+  const facadeSignFrame = new THREE.Mesh(new THREE.BoxGeometry(9.8, 0.85, 0.05), Mat.brassGold);
+  facadeSignFrame.position.set(0, 4.55, facadeZ + 0.05);
   scene.add(facadeSignFrame);
 
-  const facadeNeonLogo = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 9.8, 16), Mat.neonGold);
+  const facadeNeonLogo = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 8.8, 16), Mat.neonGold);
   facadeNeonLogo.rotation.z = Math.PI / 2;
-  facadeNeonLogo.position.set(0, 5.2, facadeZ + 0.25);
+  facadeNeonLogo.position.set(0, 4.55, facadeZ + 0.14);
   scene.add(facadeNeonLogo);
 
-  // 4 Brass Gooseneck Spotlight Lamps Illuminating Front Signboard
+  // Recessed Downlights under Balcony Portico Ceiling Illuminating Front Entrance (Y = 5.25)
   [-4.0, -1.3, 1.3, 4.0].forEach(lx => {
-    const lampArm = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6, 8), Mat.brassGold);
-    lampArm.rotation.x = Math.PI / 3;
-    lampArm.position.set(lx, 5.9, facadeZ + 0.35);
-
-    const lampHood = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.2, 12), Mat.brassGold);
-    lampHood.rotation.x = -Math.PI / 3;
-    lampHood.position.set(lx, 5.75, facadeZ + 0.6);
-
-    const lampBulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), Mat.lampFilament);
-    lampBulb.position.set(lx, 5.7, facadeZ + 0.58);
-
-    const signSpot = new THREE.PointLight(0xffbe44, 0.85, 6, 1.8);
-    signSpot.position.set(lx, 5.65, facadeZ + 0.65);
-    scene.add(lampArm, lampHood, lampBulb, signSpot);
+    const recessedRing = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.02, 8, 16), Mat.brassGold);
+    recessedRing.rotation.x = Math.PI / 2;
+    recessedRing.position.set(lx, 5.35, facadeZ + 1.2);
+    const signSpot = new THREE.PointLight(0xffbe44, 0.85, 5, 1.8);
+    signSpot.position.set(lx, 5.25, facadeZ + 1.2);
+    scene.add(recessedRing, signSpot);
   });
-
-  // H. Grand Striped Canvas Awning / Canopy across Front Entrance
-  const awningGroup = new THREE.Group();
-  awningGroup.position.set(0, 4.15, facadeZ);
-
-  const awningWidth = 12.0;
-  const awningDepth = 2.2;
-  const stripeCount = 20;
-  const stripeWidth = awningWidth / stripeCount;
-
-  for (let si = 0; si < stripeCount; si++) {
-    const sMat = (si % 2 === 0) ? Mat.awningStripeRed : Mat.awningStripeWhite;
-    const stripe = new THREE.Mesh(new THREE.BoxGeometry(stripeWidth, 0.06, awningDepth), sMat);
-    stripe.position.set(-awningWidth / 2 + stripeWidth / 2 + si * stripeWidth, 0, awningDepth / 2);
-    stripe.castShadow = true;
-    awningGroup.add(stripe);
-  }
-  awningGroup.rotation.x = 0.22; // Slanted downward gracefully
-  scene.add(awningGroup);
-
-  // Awning Decorative Wrought-Iron Wall Brackets
-  [-5.8, -2.0, 2.0, 5.8].forEach(bx => {
-    const brace = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.2, 0.06), Mat.blackMetal);
-    brace.position.set(bx, 3.6, facadeZ + 0.8);
-    brace.rotation.x = -Math.PI / 4;
-    scene.add(brace);
-  });
-
-  // I. Roof Cornice & Terracotta Eaves Overhang (Top of Facade y: 6.2)
-  const roofEaves = new THREE.Mesh(new THREE.BoxGeometry(18.6, 0.35, 0.8), Mat.roofTerracotta);
-  roofEaves.position.set(0, wallH + 0.1, facadeZ + 0.25);
-  roofEaves.rotation.x = 0.15;
-  roofEaves.castShadow = true;
-  scene.add(roofEaves);
-
-  for (let rx = -8.5; rx <= 8.5; rx += 1.7) {
-    const corbel = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.35, 0.45), Mat.oakWood);
-    corbel.position.set(rx, wallH - 0.1, facadeZ + 0.15);
-    scene.add(corbel);
-  }
 
   // J. Sidewalk A-Frame Chalkboard Menu
   const chalkboardStand = new THREE.Group();
@@ -2235,7 +2187,7 @@
   fDoorHeader.position.set(0, 10.0, floorSizeZ / 2);
   cafeLevel2Group.add(fWallL2Left, fWallL2LeftBase, fWallL2LeftTop, fWallL2Right, fWallL2RightBase, fWallL2RightTop, fDoorHeader);
 
-  // 4. ANIMATED BALCONY FRENCH DOORS (Lantai 2 Pintu Keluar ke Balkon)
+  // 4. ANIMATED LUXURY BALCONY FRENCH GLASS DOORS (Pintu Kaca Balkon Mewah Lantai 2)
   const doorL2LGroup = new THREE.Group();
   doorL2LGroup.position.set(-1.6, 5.6, floorSizeZ / 2);
   const doorL2RGroup = new THREE.Group();
@@ -2245,25 +2197,56 @@
     const leaf = new THREE.Group();
     const pivotOffset = isLeft ? 0.78 : -0.78;
 
-    // Door Frame
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(1.56, 3.1, 0.08), Mat.darkWalnut);
-    frame.position.set(pivotOffset, 1.55, 0);
+    // A. Hollow Dark Walnut Outer Frame
+    const frameTop = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.16, 0.08), Mat.darkWalnut);
+    frameTop.position.set(pivotOffset, 2.92, 0);
+    const frameBottom = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.26, 0.08), Mat.darkWalnut);
+    frameBottom.position.set(pivotOffset, 0.13, 0);
+    const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(0.14, 3.0, 0.08), Mat.darkWalnut);
+    frameLeft.position.set(pivotOffset - 0.71, 1.5, 0);
+    const frameRight = new THREE.Mesh(new THREE.BoxGeometry(0.14, 3.0, 0.08), Mat.darkWalnut);
+    frameRight.position.set(pivotOffset + 0.71, 1.5, 0);
 
-    // Glass Pane
-    const glass = new THREE.Mesh(new THREE.BoxGeometry(1.25, 2.7, 0.04), Mat.doorGlass);
+    // B. Brass Gold Accent Outer Trim
+    const trimTop = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.03, 0.085), Mat.brassGold);
+    trimTop.position.set(pivotOffset, 3.01, 0);
+    const trimBottom = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.03, 0.085), Mat.brassGold);
+    trimBottom.position.set(pivotOffset, 0.27, 0);
+
+    // C. French Glass Grid Mullions (Bars Kuningan Emas)
+    const mullH1 = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.04, 0.06), Mat.brassGold);
+    mullH1.position.set(pivotOffset, 1.1, 0);
+    const mullH2 = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.04, 0.06), Mat.brassGold);
+    mullH2.position.set(pivotOffset, 2.0, 0);
+    const mullV = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.5, 0.06), Mat.brassGold);
+    mullV.position.set(pivotOffset, 1.55, 0);
+
+    // D. Crystal Clear Transparent French Door Glass Pane
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(1.3, 2.56, 0.025), Mat.doorGlass);
     glass.position.set(pivotOffset, 1.55, 0);
 
-    // Brass Handle
-    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.55, 12), Mat.brassGold);
-    handle.position.set(pivotOffset + (isLeft ? 0.6 : -0.6), 1.45, 0.08);
+    // E. Polished Brass Vertical Pull Handles (Inside & Outside)
+    const handlePos = isLeft ? pivotOffset + 0.6 : pivotOffset - 0.6;
+    const handleFront = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.65, 12), Mat.brassGold);
+    handleFront.position.set(handlePos, 1.45, 0.065);
+    const handleBack = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.65, 12), Mat.brassGold);
+    handleBack.position.set(handlePos, 1.45, -0.065);
+    const handleMountT = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.14), Mat.brassGold);
+    handleMountT.position.set(handlePos, 1.72, 0);
+    const handleMountB = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.14), Mat.brassGold);
+    handleMountB.position.set(handlePos, 1.18, 0);
 
-    leaf.add(frame, glass, handle);
+    leaf.add(frameTop, frameBottom, frameLeft, frameRight, trimTop, trimBottom, mullH1, mullH2, mullV, glass, handleFront, handleBack, handleMountT, handleMountB);
     return leaf;
   }
 
+  // Threshold Floor Marble Strip
+  const balconyThreshold = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.03, 0.35), Mat.marbleTop);
+  balconyThreshold.position.set(0, 5.615, floorSizeZ / 2);
+
   doorL2LGroup.add(createBalconyDoorLeaf(true));
   doorL2RGroup.add(createBalconyDoorLeaf(false));
-  cafeLevel2Group.add(doorL2LGroup, doorL2RGroup);
+  cafeLevel2Group.add(balconyThreshold, doorL2LGroup, doorL2RGroup);
 
   // Balcony Door State Controller
   const balconyDoorState = {
