@@ -2868,17 +2868,31 @@
     currentY: 0.05,
     targetY: 0.05,
     isMoving: false,
-    doorOpenAmount: 0.0, // Start closed, opens smoothly when player approaches
+    doorOpenAmount: 0.0, // Start closed, opens smoothly when player/NPC approaches
     doorTarget: 0.0,
     speed: 4.5,
     cabinGroup: elevatorCabin,
     cabDoorL: cabDoorL,
     cabDoorR: cabDoorR,
     landingDoors: landingDoorLeaves,
+    callQueue: [],
+
+    // 🌟 SMART ELEVATOR DISPATCHER: Call lift to specific floor (called by Player or Waiting NPCs)
+    callElevatorToFloor: function(floorNum) {
+      if (!ELEVATOR_CONFIG.floors[floorNum]) return;
+      if (this.currentFloor === floorNum && !this.isMoving) {
+        this.doorTarget = 1.0; // Sudah di lantai ini, buka pintu untuk penumpang
+        return;
+      }
+      if (!this.callQueue.includes(floorNum) && this.targetFloor !== floorNum) {
+        this.callQueue.push(floorNum);
+      }
+    },
 
     goToFloor: function(floorNum) {
       if (!ELEVATOR_CONFIG.floors[floorNum]) return;
       if (this.currentFloor === floorNum && !this.isMoving) {
+        this.doorTarget = 1.0;
         showLocationToast(ELEVATOR_CONFIG.floors[floorNum].icon, `Sudah berada di ${ELEVATOR_CONFIG.floors[floorNum].name}`);
         return;
       }
@@ -2904,12 +2918,30 @@
       // Check vertical level match (apakah pemain berada di lantai yang sama dengan lift)
       const isSameFloor = Math.abs(py - this.currentY) < 1.8;
 
-      // 1. OTOMATIS MEMBUKA PINTU KETIKA PLAYER / NPC MENDEKAT KE LIFT PADA LANTAI AKTIF
+      // 1. SMART ELEVATOR DISPATCHER & CALL QUEUE PROCESSING
       if (!this.isMoving) {
-        if (isSameFloor && (isPlayerInside || distToElevator < 2.8 || isPlayerInLobby)) {
+        // Layani antrean panggilan lift jika lift sedang diam dan pintu sudah menutup
+        if (this.callQueue.length > 0 && this.doorOpenAmount < 0.15) {
+          const nextFloor = this.callQueue.shift();
+          if (nextFloor !== this.currentFloor) {
+            this.goToFloor(nextFloor);
+          } else {
+            this.doorTarget = 1.0;
+          }
+        }
+
+        // Cek apakah ada NPC yang sedang menunggu/naik di lantai lift saat ini
+        const isNpcNearActiveFloor = customers.some(c => {
+          if (!c.mesh || !c.mesh.root) return false;
+          const cy = c.mesh.root.position.y;
+          const sameY = Math.abs(cy - this.currentY) < 1.8;
+          return sameY && (c.state === 'wait_lift' || c.state === 'enter_lift' || c.state === 'riding_lift' || c.state === 'exit_lift' || c.state === 'wait_lift_exit' || c.state === 'enter_lift_exit' || c.state === 'riding_lift_exit' || c.state === 'exit_lift_exit');
+        });
+
+        if (isSameFloor && (isPlayerInside || distToElevator < 2.8 || isPlayerInLobby || isNpcNearActiveFloor)) {
           this.doorTarget = 1.0; // Buka pintu otomatis
-        } else if (!isPlayerInside && distToElevator >= 3.6 && !isPlayerInLobby) {
-          this.doorTarget = 0.0; // Tutup pintu saat menjauh
+        } else if (!isPlayerInside && distToElevator >= 3.6 && !isPlayerInLobby && !isNpcNearActiveFloor && this.callQueue.length === 0) {
+          this.doorTarget = 0.0; // Tutup pintu saat tidak ada orang
         }
       }
 
@@ -2957,6 +2989,13 @@
             player.root.position.y = this.currentY;
           }
 
+          // Bawa seluruh NPC penumpang lift secara mulus
+          customers.forEach(c => {
+            if (c.state === 'riding_lift' || c.state === 'riding_lift_exit') {
+              c.mesh.root.position.y = this.currentY;
+            }
+          });
+
           // Cek ketibaan di lantai tujuan
           if (Math.abs(this.currentY - this.targetY) < 0.02) {
             this.currentY = this.targetY;
@@ -2968,6 +3007,12 @@
             if (isPlayerInside) {
               player.root.position.y = this.currentY;
             }
+
+            customers.forEach(c => {
+              if (c.state === 'riding_lift' || c.state === 'riding_lift_exit') {
+                c.mesh.root.position.y = this.currentY;
+              }
+            });
 
             if (audio && audio.playDing) audio.playDing();
             showLocationToast(ELEVATOR_CONFIG.floors[this.currentFloor].icon, `Tiba di ${ELEVATOR_CONFIG.floors[this.currentFloor].name}!`);
@@ -5065,15 +5110,35 @@
   }
 
   /* ==========================================================================
-     12. DINING TABLES & ARMCHAIRS
+     12. MULTI-FLOOR DINING TABLES (15 MEJA DI LANTAI 1, LANTAI 2 LOUNGE/BALKON, & ROOFTOP)
      ========================================================================== */
   const tables = [
-    { id: 1, pos: new THREE.Vector3(-4.5, 0, 3.5), radius: 1.55, seats: 4, customer: null, cushionMat: Mat.cushionTerracotta },
-    { id: 2, pos: new THREE.Vector3(0, 0, 4.2), radius: 1.55, seats: 4, customer: null, cushionMat: Mat.cushionSage },
-    { id: 3, pos: new THREE.Vector3(4.5, 0, 3.5), radius: 1.55, seats: 4, customer: null, cushionMat: Mat.cushionMustard }
+    // Lantai 1 (Ground Floor: Y = 0.05)
+    { id: 1, floor: 1, pos: new THREE.Vector3(-4.5, 0.05, 3.5), chairOffset: new THREE.Vector3(0, 0, 1.4), name: 'Meja 1 (Lt 1)', customer: null, cushionMat: Mat.cushionTerracotta, create3D: true },
+    { id: 2, floor: 1, pos: new THREE.Vector3(0, 0.05, 4.2), chairOffset: new THREE.Vector3(0, 0, 1.4), name: 'Meja 2 (Lt 1)', customer: null, cushionMat: Mat.cushionSage, create3D: true },
+    { id: 3, floor: 1, pos: new THREE.Vector3(4.5, 0.05, 3.5), chairOffset: new THREE.Vector3(0, 0, 1.4), name: 'Meja 3 (Lt 1)', customer: null, cushionMat: Mat.cushionMustard, create3D: true },
+
+    // Lantai 2 (Executive Lounge: Y = 5.6)
+    { id: 4, floor: 2, pos: new THREE.Vector3(-4.5, 5.6, -2.0), chairOffset: new THREE.Vector3(0, 0, 1.35), name: 'Meja 4 (Lt 2 Lounge)', customer: null },
+    { id: 5, floor: 2, pos: new THREE.Vector3(0.0, 5.6, -2.0), chairOffset: new THREE.Vector3(0, 0, 1.35), name: 'Meja 5 (Lt 2 Lounge)', customer: null },
+    { id: 6, floor: 2, pos: new THREE.Vector3(-4.5, 5.6, 3.5), chairOffset: new THREE.Vector3(0, 0, 1.35), name: 'Meja 6 (Lt 2 Lounge)', customer: null },
+    { id: 7, floor: 2, pos: new THREE.Vector3(0.0, 5.6, 3.5), chairOffset: new THREE.Vector3(0, 0, 1.35), name: 'Meja 7 (Lt 2 Lounge)', customer: null },
+
+    // Lantai 2 (Outdoor Balcony: Y = 5.6)
+    { id: 8, floor: 2, pos: new THREE.Vector3(-4.8, 5.6, 9.8), chairOffset: new THREE.Vector3(0, 0, 1.05), name: 'Meja 8 (Balkon Lt 2)', customer: null },
+    { id: 9, floor: 2, pos: new THREE.Vector3(4.8, 5.6, 9.8), chairOffset: new THREE.Vector3(0, 0, 1.05), name: 'Meja 9 (Balkon Lt 2)', customer: null },
+
+    // Lantai 3 (Rooftop Sky Lounge: Y = 11.2)
+    { id: 10, floor: 3, pos: new THREE.Vector3(-4.5, 11.2, 2.0), chairOffset: new THREE.Vector3(0, 0, 1.15), name: 'Meja 10 (Rooftop)', customer: null },
+    { id: 11, floor: 3, pos: new THREE.Vector3(0.0, 11.2, 2.5), chairOffset: new THREE.Vector3(0, 0, 1.15), name: 'Meja 11 (Rooftop)', customer: null },
+    { id: 12, floor: 3, pos: new THREE.Vector3(4.5, 11.2, 2.0), chairOffset: new THREE.Vector3(0, 0, 1.15), name: 'Meja 12 (Rooftop)', customer: null },
+    { id: 13, floor: 3, pos: new THREE.Vector3(-2.0, 11.2, 5.4), chairOffset: new THREE.Vector3(0, 0, -0.75), name: 'Barstool 1 (Rooftop)', customer: null },
+    { id: 14, floor: 3, pos: new THREE.Vector3(1.6, 11.2, 5.4), chairOffset: new THREE.Vector3(0, 0, -0.75), name: 'Barstool 2 (Rooftop)', customer: null },
+    { id: 15, floor: 3, pos: new THREE.Vector3(-6.2, 11.2, -4.5), chairOffset: new THREE.Vector3(0, 0, 0.9), name: 'Sofa Lounge (Rooftop)', customer: null }
   ];
 
-  tables.forEach((t) => {
+  // Bangun 3D Meshes untuk Meja Lantai 1
+  tables.filter(t => t.create3D).forEach((t) => {
     const tableGroup = new THREE.Group();
     const tTop = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.08, 32), Mat.oakWood);
     tTop.position.y = 0.95;
@@ -5509,42 +5574,46 @@
   };
 
   /* ==========================================================================
-     15. CUSTOMER SPAWN & 3D BUBBLES (WALK-IN FROM VILLAGE TO TABLE)
+     15. CUSTOMER SPAWN & 3D BUBBLES (MULTI-FLOOR WALK-IN & LIFT RIDE)
      ========================================================================== */
   const customers = [];
 
   function spawnCustomer() {
-    const emptyTable = tables.find(t => !t.customer && !t.reserved);
-    if (!emptyTable) return;
+    // Cari meja kosong secara acak di lantai 1, 2, atau rooftop
+    const availableTables = tables.filter(t => !t.customer && !t.reserved);
+    if (availableTables.length === 0) return;
 
+    // Pilih meja acak
+    const emptyTable = availableTables[Math.floor(Math.random() * availableTables.length)];
     emptyTable.reserved = true;
 
     const custMesh = createHumanoid({
       skinMat: Mat.skin,
       hairMat: Math.random() > 0.5 ? Mat.hairBrown : Mat.hairBlack,
       shirtMat: new THREE.MeshStandardMaterial({
-        color: [0x0284c7, 0xe11d48, 0x10b981, 0x8b5cf6, 0xf59e0b, 0x06b6d4, 0xec4899][Math.floor(Math.random() * 7)]
+        color: [0x0284c7, 0xe11d48, 0x10b981, 0x8b5cf6, 0xf59e0b, 0x06b6d4, 0xec4899, 0xf97316][Math.floor(Math.random() * 8)]
       }),
       pantsMat: Math.random() > 0.5 ? Mat.pantsKhaki : Mat.pantsJeans
     });
 
     // Spawn out in the village cobblestone road
-    const spawnX = (Math.random() - 0.5) * 1.8;
-    const spawnZ = 23.5 + Math.random() * 2.0;
+    const spawnX = (Math.random() - 0.5) * 2.2;
+    const spawnZ = 23.5 + Math.random() * 2.5;
     custMesh.root.position.set(spawnX, 0, spawnZ);
-    custMesh.root.rotation.y = Math.PI; // Face towards cafe entrance
+    custMesh.root.rotation.y = Math.PI; // Menghadap pintu masuk kafe
     scene.add(custMesh.root);
 
     const orderItem = MENU_ITEMS[Math.floor(Math.random() * MENU_ITEMS.length)];
 
     const bubbleEl = document.createElement('div');
     bubbleEl.className = 'order-bubble';
-    bubbleEl.style.display = 'none'; // Hidden while walking outside
+    bubbleEl.style.display = 'none';
     bubbleEl.innerHTML = `
       <div class="order-bubble-card">
         <span class="text-xl p-1 rounded-lg" style="background:${orderItem.bg}">${orderItem.icon}</span>
         <div class="flex flex-col">
           <span class="font-outfit font-bold text-xs text-amber-950">${orderItem.name}</span>
+          <span class="text-[9px] text-amber-700 font-semibold">${emptyTable.name}</span>
           <div class="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden mt-0.5">
             <div class="patience-bar h-full bg-emerald-500 transition-all duration-300" style="width: 100%"></div>
           </div>
@@ -5554,25 +5623,49 @@
     `;
     bubbleContainer.appendChild(bubbleEl);
 
-    // Chair target position: table.pos.x, 0, table.pos.z + 1.5
-    const chairPos = new THREE.Vector3(emptyTable.pos.x, 0, emptyTable.pos.z + 1.5);
+    // Hitung posisi duduk di meja
+    const chairOffset = emptyTable.chairOffset || new THREE.Vector3(0, 0, 1.4);
+    const chairPos = new THREE.Vector3(
+      emptyTable.pos.x + chairOffset.x,
+      emptyTable.pos.y,
+      emptyTable.pos.z + chairOffset.z
+    );
+
+    let initialWaypoints = [];
+    let startState = 'walk_in';
+
+    if (emptyTable.floor === 1) {
+      // Pelanggan Lantai 1: Jalan langsung dari desa ke meja lantai 1
+      startState = 'walk_in';
+      initialWaypoints = [
+        new THREE.Vector3((Math.random() - 0.5) * 0.8, 0, 9.2),
+        new THREE.Vector3((Math.random() - 0.5) * 0.6, 0, 6.8),
+        chairPos
+      ];
+    } else {
+      // Pelanggan Lantai 2 / Rooftop: Jalan dari desa menuju portal Menara Lift Lantai 1!
+      startState = 'walk_to_lift';
+      initialWaypoints = [
+        new THREE.Vector3((Math.random() - 0.5) * 0.8, 0, 9.2),  // Teras depan
+        new THREE.Vector3(0.0, 0, 6.8),                         // Foyer depan
+        new THREE.Vector3(4.5, 0, 2.0),                         // Lorong kafe kanan
+        new THREE.Vector3(8.6, 0.05, -3.5)                      // Di depan Portal Lift Sayap Kanan Lt 1
+      ];
+    }
 
     const cust = {
       mesh: custMesh,
       table: emptyTable,
       order: orderItem,
       bubbleEl: bubbleEl,
-      patience: 42,
-      maxPatience: 42,
-      state: 'walk_in',
+      patience: 60,
+      maxPatience: 60,
+      state: startState,
       drinkTimer: 0,
       walkCycle: 0,
-      speed: 2.4,
-      waypoints: [
-        new THREE.Vector3((Math.random() - 0.5) * 0.8, 0, 9.2),  // Porch Entrance Waypoint
-        new THREE.Vector3((Math.random() - 0.5) * 0.6, 0, 6.8),  // Inside Foyer Waypoint (Doorway Z: 8.0)
-        chairPos                                                // Table Chair Waypoint
-      ],
+      speed: 2.5,
+      chairPos: chairPos,
+      waypoints: initialWaypoints,
       currentWpIndex: 0
     };
 
@@ -7577,65 +7670,226 @@
     if (typeof balconyDoorState !== 'undefined') balconyDoorState.update(dt);
     }
 
-    // 6. Customer Spawning Timer
+    // 6. Customer Spawning Timer (KAFE RAME: Spawn Cepat & Kapasitas Banyak!)
     customerSpawnTimer -= dt;
-    if (customerSpawnTimer <= 0) {
+    if (customerSpawnTimer <= 0 && customers.length < 14) {
       spawnCustomer();
-      customerSpawnTimer = 6.0 + Math.random() * 4.0;
+      customerSpawnTimer = 2.2 + Math.random() * 2.0; // Pelanggan berdatangan setiap 2-4 detik
     }
 
-    // 7. Update Customers AI Lifecycle (Walking in -> Sitting -> Drinking -> Walking out)
+    // 7. Update Customers AI Lifecycle (Multi-Floor Walk-In, Lift Ride, Dining, & Exit)
     for (let i = customers.length - 1; i >= 0; i--) {
       const cust = customers[i];
 
       if (updateKnockdownEntity(cust, dt, now)) {
-        continue; // Skip customer AI while knocked down
+        continue;
       }
 
-      if (cust.state === 'walk_in') {
+      const curPos = cust.mesh.root.position;
+
+      // -------------------------------------------------------------
+      // STATE: WALK_TO_LIFT (Menuju ke Portal Lift di Lantai 1)
+      // -------------------------------------------------------------
+      if (cust.state === 'walk_to_lift') {
         const targetWp = cust.waypoints[cust.currentWpIndex];
-        const curPos = cust.mesh.root.position;
         const dx = targetWp.x - curPos.x;
         const dz = targetWp.z - curPos.z;
-        const dist = Math.sqrt(dx * dx + dz * dz);
+        const dist = Math.hypot(dx, dz);
 
-        if (dist < 0.25) {
+        if (dist < 0.28) {
           cust.currentWpIndex++;
           if (cust.currentWpIndex >= cust.waypoints.length) {
-            // Arrived at Table! Sit down on chair and place order
-            cust.state = 'waiting';
-            cust.mesh.root.position.copy(targetWp);
-            cust.mesh.root.rotation.y = Math.PI; // Face the dining table
-            cust.mesh.legL.rotation.x = -Math.PI / 2;
-            cust.mesh.legR.rotation.x = -Math.PI / 2;
-            cust.mesh.armL.rotation.x = -Math.PI / 3;
-            cust.mesh.armR.rotation.x = -Math.PI / 3;
-            cust.table.customer = cust;
-            audio.playDing();
+            // Tiba di depan portal lift lantai 1!
+            cust.state = 'wait_lift';
+            cust.mesh.root.position.set(8.6, 0.05, -3.5);
+            cust.mesh.root.rotation.y = Math.PI / 2; // Menghadap pintu lift (+X)
+            // Panggil lift agar turun menjemput NPC!
+            ElevatorSystem.callElevatorToFloor(1);
+            if (cust.bubbleEl) {
+              cust.bubbleEl.innerHTML = `
+                <div class="order-bubble-card border-amber-400 bg-amber-50">
+                  <span class="text-lg">🛗</span>
+                  <span class="font-outfit font-bold text-xs text-amber-950">Menunggu Lift ke ${cust.table.name}...</span>
+                </div>
+                <div class="order-bubble-tail border-t-amber-400"></div>
+              `;
+            }
           }
         } else {
           const step = Math.min(dist, cust.speed * dt);
           curPos.x += (dx / dist) * step;
           curPos.z += (dz / dist) * step;
-
-          // Smooth rotation towards current waypoint
           const targetYaw = Math.atan2(dx, dz);
-          let diff = targetYaw - cust.mesh.root.rotation.y;
-          while (diff < -Math.PI) diff += Math.PI * 2;
-          while (diff > Math.PI) diff -= Math.PI * 2;
-          cust.mesh.root.rotation.y += diff * Math.min(1.0, dt * 8.0);
+          cust.mesh.root.rotation.y = lerpAngle(cust.mesh.root.rotation.y, targetYaw, dt * 8.0);
 
-          // Walk cycle leg and arm animation
           cust.walkCycle += dt * 8.5;
           cust.mesh.legL.rotation.x = Math.sin(cust.walkCycle) * 0.45;
           cust.mesh.legR.rotation.x = -Math.sin(cust.walkCycle) * 0.45;
           cust.mesh.armL.rotation.x = -Math.sin(cust.walkCycle) * 0.35;
           cust.mesh.armR.rotation.x = Math.sin(cust.walkCycle) * 0.35;
         }
-      } else if (cust.state === 'waiting') {
+      }
+      // -------------------------------------------------------------
+      // STATE: WAIT_LIFT (Menunggu Lift Turun & Membuka Pintu)
+      // -------------------------------------------------------------
+      else if (cust.state === 'wait_lift') {
+        cust.mesh.legL.rotation.x = 0;
+        cust.mesh.legR.rotation.x = 0;
+        cust.mesh.armL.rotation.x = 0;
+        cust.mesh.armR.rotation.x = 0;
+
+        // Pastikan lift terus dipanggil jika masih berada di lantai atas
+        ElevatorSystem.callElevatorToFloor(1);
+
+        // Jika lift sudah berada di lantai 1 dan pintunya sudah terbuka lebar
+        if (ElevatorSystem.currentFloor === 1 && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.75) {
+          cust.state = 'enter_lift';
+        }
+      }
+      // -------------------------------------------------------------
+      // STATE: ENTER_LIFT (Berjalan Masuk ke Dalam Kabin Lift Kaca)
+      // -------------------------------------------------------------
+      else if (cust.state === 'enter_lift') {
+        const targetX = 10.6;
+        const dx = targetX - curPos.x;
+        if (Math.abs(dx) < 0.15) {
+          cust.mesh.root.position.set(10.6, 0.05, -3.5);
+          cust.mesh.root.rotation.y = -Math.PI / 2; // Menghadap pintu keluar (-X)
+          cust.state = 'riding_lift';
+          // Tekan tombol lift ke lantai tujuan meja!
+          ElevatorSystem.goToFloor(cust.table.floor);
+          if (cust.bubbleEl) {
+            cust.bubbleEl.innerHTML = `
+              <div class="order-bubble-card border-cyan-400 bg-sky-50">
+                <span class="text-lg">🌟</span>
+                <span class="font-outfit font-bold text-xs text-sky-950">Naik Lift ke ${cust.table.name}...</span>
+              </div>
+              <div class="order-bubble-tail border-t-cyan-400"></div>
+            `;
+          }
+        } else {
+          curPos.x += Math.sign(dx) * cust.speed * 0.8 * dt;
+          cust.mesh.root.rotation.y = Math.PI / 2;
+          cust.walkCycle += dt * 8.5;
+          cust.mesh.legL.rotation.x = Math.sin(cust.walkCycle) * 0.45;
+          cust.mesh.legR.rotation.x = -Math.sin(cust.walkCycle) * 0.45;
+        }
+      }
+      // -------------------------------------------------------------
+      // STATE: RIDING_LIFT (Kabin Lift Meluncur Naik Membawa NPC)
+      // -------------------------------------------------------------
+      else if (cust.state === 'riding_lift') {
+        curPos.y = ElevatorSystem.currentY;
+        cust.mesh.legL.rotation.x = 0;
+        cust.mesh.legR.rotation.x = 0;
+
+        // Cek apakah lift sudah tiba di lantai meja dan pintu sudah terbuka
+        if (ElevatorSystem.currentFloor === cust.table.floor && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.75) {
+          cust.state = 'exit_lift';
+        }
+      }
+      // -------------------------------------------------------------
+      // STATE: EXIT_LIFT (Keluar dari Lift ke Lobi Lantai Tujuan)
+      // -------------------------------------------------------------
+      else if (cust.state === 'exit_lift') {
+        const targetX = 8.6;
+        const dx = targetX - curPos.x;
+        if (Math.abs(dx) < 0.15) {
+          curPos.x = 8.6;
+          cust.state = 'walk_in';
+
+          // Buat rute jalan dari lobi lift lantai ini menuju meja spesifik
+          const tablePos = cust.table.pos;
+          if (cust.table.floor === 2 && cust.table.id >= 8) {
+            // Meja Balkon Outdoor Lantai 2 (Lewati pintu kaca balkon)
+            cust.waypoints = [
+              new THREE.Vector3(4.0, 5.6, 2.0),
+              new THREE.Vector3(0.0, 5.6, 6.8),
+              new THREE.Vector3(0.0, 5.6, 9.2),
+              cust.chairPos
+            ];
+          } else if (cust.table.floor === 2) {
+            // Meja Lounge Lantai 2
+            cust.waypoints = [
+              new THREE.Vector3(3.0, 5.6, tablePos.z),
+              cust.chairPos
+            ];
+          } else {
+            // Meja Rooftop Lantai 3
+            cust.waypoints = [
+              new THREE.Vector3(3.0, 11.2, tablePos.z),
+              cust.chairPos
+            ];
+          }
+          cust.currentWpIndex = 0;
+        } else {
+          curPos.x += Math.sign(dx) * cust.speed * 0.8 * dt;
+          cust.mesh.root.rotation.y = -Math.PI / 2;
+          cust.walkCycle += dt * 8.5;
+          cust.mesh.legL.rotation.x = Math.sin(cust.walkCycle) * 0.45;
+          cust.mesh.legR.rotation.x = -Math.sin(cust.walkCycle) * 0.45;
+        }
+      }
+      // -------------------------------------------------------------
+      // STATE: WALK_IN (Menuju Kursi Meja Makan)
+      // -------------------------------------------------------------
+      else if (cust.state === 'walk_in') {
+        const targetWp = cust.waypoints[cust.currentWpIndex];
+        const dx = targetWp.x - curPos.x;
+        const dz = targetWp.z - curPos.z;
+        const dist = Math.hypot(dx, dz);
+
+        if (dist < 0.28) {
+          cust.currentWpIndex++;
+          if (cust.currentWpIndex >= cust.waypoints.length) {
+            // Tiba di meja! Duduk di kursi dan pesan menu
+            cust.state = 'waiting';
+            cust.mesh.root.position.copy(targetWp);
+            cust.mesh.root.rotation.y = Math.PI; // Menghadap meja
+            cust.mesh.legL.rotation.x = -Math.PI / 2;
+            cust.mesh.legR.rotation.x = -Math.PI / 2;
+            cust.mesh.armL.rotation.x = -Math.PI / 3;
+            cust.mesh.armR.rotation.x = -Math.PI / 3;
+            cust.table.customer = cust;
+            audio.playDing();
+
+            if (cust.bubbleEl) {
+              cust.bubbleEl.innerHTML = `
+                <div class="order-bubble-card">
+                  <span class="text-xl p-1 rounded-lg" style="background:${cust.order.bg}">${cust.order.icon}</span>
+                  <div class="flex flex-col">
+                    <span class="font-outfit font-bold text-xs text-amber-950">${cust.order.name}</span>
+                    <span class="text-[9px] text-amber-700 font-semibold">${cust.table.name}</span>
+                    <div class="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden mt-0.5">
+                      <div class="patience-bar h-full bg-emerald-500 transition-all duration-300" style="width: 100%"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="order-bubble-tail"></div>
+              `;
+            }
+          }
+        } else {
+          const step = Math.min(dist, cust.speed * dt);
+          curPos.x += (dx / dist) * step;
+          curPos.z += (dz / dist) * step;
+          const targetYaw = Math.atan2(dx, dz);
+          cust.mesh.root.rotation.y = lerpAngle(cust.mesh.root.rotation.y, targetYaw, dt * 8.0);
+
+          cust.walkCycle += dt * 8.5;
+          cust.mesh.legL.rotation.x = Math.sin(cust.walkCycle) * 0.45;
+          cust.mesh.legR.rotation.x = -Math.sin(cust.walkCycle) * 0.45;
+          cust.mesh.armL.rotation.x = -Math.sin(cust.walkCycle) * 0.35;
+          cust.mesh.armR.rotation.x = Math.sin(cust.walkCycle) * 0.35;
+        }
+      }
+      // -------------------------------------------------------------
+      // STATE: WAITING (Duduk Menunggu Pesanan Diantar)
+      // -------------------------------------------------------------
+      else if (cust.state === 'waiting') {
         cust.patience -= dt;
         const pct = Math.max(0, (cust.patience / cust.maxPatience) * 100);
-        const pBar = cust.bubbleEl.querySelector('.patience-bar');
+        const pBar = cust.bubbleEl ? cust.bubbleEl.querySelector('.patience-bar') : null;
         if (pBar) {
           pBar.style.width = pct + '%';
           if (pct < 30) pBar.className = 'patience-bar h-full bg-rose-500 transition-all duration-300';
@@ -7643,38 +7897,54 @@
         }
 
         if (cust.patience <= 0) {
-          // Disappointed customer stands up and exits to village
+          // Pelanggan kecewa karena pesanan telat
           cust.table.customer = null;
           cust.table.reserved = false;
-          cust.state = 'walk_out';
           cust.mesh.legL.rotation.x = 0;
           cust.mesh.legR.rotation.x = 0;
           cust.mesh.armL.rotation.x = 0;
           cust.mesh.armR.rotation.x = 0;
-          cust.waypoints = [
-            new THREE.Vector3((Math.random() - 0.5) * 0.6, 0, 6.8), // foyer
-            new THREE.Vector3((Math.random() - 0.5) * 0.8, 0, 9.2), // porch
-            new THREE.Vector3((Math.random() - 0.5) * 2.0, 0, 26.0) // village road
-          ];
-          cust.currentWpIndex = 0;
-          cust.bubbleEl.innerHTML = `
-            <div class="order-bubble-card border-rose-500 bg-rose-50">
-              <span class="text-xl">😤</span>
-              <span class="font-outfit font-bold text-xs text-rose-900">Kelamaan! Pulang...</span>
-            </div>
-            <div class="order-bubble-tail border-t-rose-500"></div>
-          `;
-          setTimeout(() => { if (cust.bubbleEl) cust.bubbleEl.remove(); }, 2000);
+
+          if (cust.table.floor === 1) {
+            cust.state = 'walk_out';
+            cust.waypoints = [
+              new THREE.Vector3(0, 0, 6.8),
+              new THREE.Vector3(0, 0, 9.2),
+              new THREE.Vector3(0, 0, 26.0)
+            ];
+            cust.currentWpIndex = 0;
+          } else {
+            cust.state = 'walk_to_lift_exit';
+            cust.waypoints = [
+              new THREE.Vector3(3.0, cust.table.pos.y, -3.5),
+              new THREE.Vector3(8.6, cust.table.pos.y, -3.5)
+            ];
+            cust.currentWpIndex = 0;
+          }
+
+          if (cust.bubbleEl) {
+            cust.bubbleEl.innerHTML = `
+              <div class="order-bubble-card border-rose-500 bg-rose-50">
+                <span class="text-xl">😤</span>
+                <span class="font-outfit font-bold text-xs text-rose-900">Kelamaan! Pulang...</span>
+              </div>
+              <div class="order-bubble-tail border-t-rose-500"></div>
+            `;
+            setTimeout(() => { if (cust.bubbleEl) cust.bubbleEl.remove(); }, 2000);
+          }
         }
-      } else if (cust.state === 'drinking') {
+      }
+      // -------------------------------------------------------------
+      // STATE: DRINKING (Menikmati Minuman / Makanan)
+      // -------------------------------------------------------------
+      else if (cust.state === 'drinking') {
         cust.drinkTimer -= dt;
 
-        // REALISTIC 4-PHASE DRINKING & SIPPING ANIMATION
+        // Animasi minum 4-fase
         const elapsedDrink = 6.0 - cust.drinkTimer;
-        const sipCycle = elapsedDrink % 2.2; // 2.2 second cycle repeats ~3 times
+        const sipCycle = elapsedDrink % 2.2;
 
         if (sipCycle < 0.6) {
-          // Phase 1: Lift Cup to Mouth
           const t = sipCycle / 0.6;
           const ease = t * t * (3 - 2 * t);
           cust.mesh.armR.rotation.x = -Math.PI / 3 + (-Math.PI * 0.72 - (-Math.PI / 3)) * ease;
@@ -7682,14 +7952,12 @@
           cust.mesh.armR.rotation.y = 0.25 * ease;
           cust.mesh.head.rotation.x = -0.16 * ease;
         } else if (sipCycle < 1.3) {
-          // Phase 2: Sipping, Gulping & Gentle Throat/Head Bob
           const sipT = (sipCycle - 0.6) / 0.7;
           cust.mesh.armR.rotation.x = -Math.PI * 0.72 + Math.sin(sipT * Math.PI * 4) * 0.04;
           cust.mesh.armR.rotation.z = -0.32;
           cust.mesh.armR.rotation.y = 0.25;
           cust.mesh.head.rotation.x = -0.16 + Math.sin(sipT * Math.PI * 6) * 0.05;
         } else if (sipCycle < 1.8) {
-          // Phase 3: Lower Cup Back Down to Table Level
           const t = (sipCycle - 1.3) / 0.5;
           const ease = t * t * (3 - 2 * t);
           cust.mesh.armR.rotation.x = -Math.PI * 0.72 + (-Math.PI / 3 - (-Math.PI * 0.72)) * ease;
@@ -7697,7 +7965,6 @@
           cust.mesh.armR.rotation.y = 0.25 * (1 - ease);
           cust.mesh.head.rotation.x = -0.16 * (1 - ease);
         } else {
-          // Phase 4: Savoring & Contented Nodding of the Head
           const nodT = (sipCycle - 1.8) / 0.4;
           cust.mesh.armR.rotation.x = -Math.PI / 3;
           cust.mesh.armR.rotation.z = 0;
@@ -7707,45 +7974,163 @@
         }
 
         if (cust.drinkTimer <= 0) {
-          // Finished drinking! Clean up cup prop and stand up
           if (cust.cupProp) {
             cust.mesh.armR.remove(cust.cupProp);
             cust.cupProp = null;
           }
           cust.table.customer = null;
           cust.table.reserved = false;
-          cust.state = 'walk_out';
           cust.mesh.legL.rotation.x = 0;
           cust.mesh.legR.rotation.x = 0;
           cust.mesh.armL.rotation.x = 0;
           cust.mesh.armR.rotation.x = 0;
           cust.mesh.head.rotation.set(0, 0, 0);
-          cust.waypoints = [
-            new THREE.Vector3((Math.random() - 0.5) * 0.6, 0, 6.8), // foyer
-            new THREE.Vector3((Math.random() - 0.5) * 0.8, 0, 9.2), // porch
-            new THREE.Vector3((Math.random() - 0.5) * 2.0, 0, 26.0) // village road
-          ];
-          cust.currentWpIndex = 0;
-          cust.bubbleEl.innerHTML = `
-            <div class="order-bubble-card border-emerald-500 bg-emerald-50">
-              <span class="text-xl">😊</span>
-              <span class="font-outfit font-bold text-xs text-emerald-900">Mantap! Terima Kasih ✨</span>
-            </div>
-            <div class="order-bubble-tail border-t-emerald-500"></div>
-          `;
-          setTimeout(() => { if (cust.bubbleEl) cust.bubbleEl.remove(); }, 2000);
+
+          if (cust.table.floor === 1) {
+            cust.state = 'walk_out';
+            cust.waypoints = [
+              new THREE.Vector3(0, 0, 6.8),
+              new THREE.Vector3(0, 0, 9.2),
+              new THREE.Vector3(0, 0, 26.0)
+            ];
+            cust.currentWpIndex = 0;
+          } else {
+            // Pelanggan di lantai 2 atau rooftop: Berjalan menuju lift untuk turun ke lantai 1!
+            cust.state = 'walk_to_lift_exit';
+            const tablePos = cust.table.pos;
+            if (cust.table.floor === 2 && cust.table.id >= 8) {
+              cust.waypoints = [
+                new THREE.Vector3(0.0, 5.6, 7.5),
+                new THREE.Vector3(4.0, 5.6, 2.0),
+                new THREE.Vector3(8.6, 5.6, -3.5)
+              ];
+            } else {
+              cust.waypoints = [
+                new THREE.Vector3(3.0, tablePos.y, -3.5),
+                new THREE.Vector3(8.6, tablePos.y, -3.5)
+              ];
+            }
+            cust.currentWpIndex = 0;
+          }
+
+          if (cust.bubbleEl) {
+            cust.bubbleEl.innerHTML = `
+              <div class="order-bubble-card border-emerald-500 bg-emerald-50">
+                <span class="text-xl">😊</span>
+                <span class="font-outfit font-bold text-xs text-emerald-900">Mantap! Terima Kasih ✨</span>
+              </div>
+              <div class="order-bubble-tail border-t-emerald-500"></div>
+            `;
+            setTimeout(() => { if (cust.bubbleEl) cust.bubbleEl.remove(); }, 2000);
+          }
         }
-      } else if (cust.state === 'walk_out') {
+      }
+      // -------------------------------------------------------------
+      // STATE: WALK_TO_LIFT_EXIT (Menuju Lift di Lantai Atas untuk Turun)
+      // -------------------------------------------------------------
+      else if (cust.state === 'walk_to_lift_exit') {
         const targetWp = cust.waypoints[cust.currentWpIndex];
-        const curPos = cust.mesh.root.position;
         const dx = targetWp.x - curPos.x;
         const dz = targetWp.z - curPos.z;
-        const dist = Math.sqrt(dx * dx + dz * dz);
+        const dist = Math.hypot(dx, dz);
 
-        if (dist < 0.3) {
+        if (dist < 0.28) {
+          cust.currentWpIndex++;
+          if (cust.currentWpIndex >= cust.waypoints.length) {
+            cust.state = 'wait_lift_exit';
+            cust.mesh.root.position.set(8.6, cust.table.pos.y, -3.5);
+            cust.mesh.root.rotation.y = Math.PI / 2;
+            ElevatorSystem.callElevatorToFloor(cust.table.floor);
+          }
+        } else {
+          const step = Math.min(dist, cust.speed * dt);
+          curPos.x += (dx / dist) * step;
+          curPos.z += (dz / dist) * step;
+          const targetYaw = Math.atan2(dx, dz);
+          cust.mesh.root.rotation.y = lerpAngle(cust.mesh.root.rotation.y, targetYaw, dt * 8.0);
+
+          cust.walkCycle += dt * 8.5;
+          cust.mesh.legL.rotation.x = Math.sin(cust.walkCycle) * 0.45;
+          cust.mesh.legR.rotation.x = -Math.sin(cust.walkCycle) * 0.45;
+        }
+      }
+      // -------------------------------------------------------------
+      // STATE: WAIT_LIFT_EXIT (Menunggu Lift Naik Menjemput di Lantai Atas)
+      // -------------------------------------------------------------
+      else if (cust.state === 'wait_lift_exit') {
+        ElevatorSystem.callElevatorToFloor(cust.table.floor);
+
+        if (ElevatorSystem.currentFloor === cust.table.floor && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.75) {
+          cust.state = 'enter_lift_exit';
+        }
+      }
+      // -------------------------------------------------------------
+      // STATE: ENTER_LIFT_EXIT (Masuk Lift dari Lantai Atas)
+      // -------------------------------------------------------------
+      else if (cust.state === 'enter_lift_exit') {
+        const targetX = 10.6;
+        const dx = targetX - curPos.x;
+        if (Math.abs(dx) < 0.15) {
+          cust.mesh.root.position.set(10.6, cust.table.pos.y, -3.5);
+          cust.mesh.root.rotation.y = -Math.PI / 2;
+          cust.state = 'riding_lift_exit';
+          // Tekan tombol lift ke Lantai 1 untuk turun!
+          ElevatorSystem.goToFloor(1);
+        } else {
+          curPos.x += Math.sign(dx) * cust.speed * 0.8 * dt;
+          cust.mesh.root.rotation.y = Math.PI / 2;
+          cust.walkCycle += dt * 8.5;
+          cust.mesh.legL.rotation.x = Math.sin(cust.walkCycle) * 0.45;
+          cust.mesh.legR.rotation.x = -Math.sin(cust.walkCycle) * 0.45;
+        }
+      }
+      // -------------------------------------------------------------
+      // STATE: RIDING_LIFT_EXIT (Lift Meluncur Turun ke Lantai 1)
+      // -------------------------------------------------------------
+      else if (cust.state === 'riding_lift_exit') {
+        curPos.y = ElevatorSystem.currentY;
+
+        if (ElevatorSystem.currentFloor === 1 && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.75) {
+          cust.state = 'exit_lift_exit';
+        }
+      }
+      // -------------------------------------------------------------
+      // STATE: EXIT_LIFT_EXIT (Keluar Lift di Lantai 1 Menuju Pintu Luar)
+      // -------------------------------------------------------------
+      else if (cust.state === 'exit_lift_exit') {
+        const targetX = 8.6;
+        const dx = targetX - curPos.x;
+        if (Math.abs(dx) < 0.15) {
+          curPos.x = 8.6;
+          curPos.y = 0.05;
+          cust.state = 'walk_out';
+          cust.waypoints = [
+            new THREE.Vector3(4.5, 0, 2.0),
+            new THREE.Vector3(0.0, 0, 6.8),
+            new THREE.Vector3(0.0, 0, 9.2),
+            new THREE.Vector3(0.0, 0, 26.0)
+          ];
+          cust.currentWpIndex = 0;
+        } else {
+          curPos.x += Math.sign(dx) * cust.speed * 0.8 * dt;
+          cust.mesh.root.rotation.y = -Math.PI / 2;
+          cust.walkCycle += dt * 8.5;
+          cust.mesh.legL.rotation.x = Math.sin(cust.walkCycle) * 0.45;
+          cust.mesh.legR.rotation.x = -Math.sin(cust.walkCycle) * 0.45;
+        }
+      }
+      // -------------------------------------------------------------
+      // STATE: WALK_OUT (Jalan Pulang ke Jalan Desa & Despawn)
+      // -------------------------------------------------------------
+      else if (cust.state === 'walk_out') {
+        const targetWp = cust.waypoints[cust.currentWpIndex];
+        const dx = targetWp.x - curPos.x;
+        const dz = targetWp.z - curPos.z;
+        const dist = Math.hypot(dx, dz);
+
+        if (dist < 0.35) {
           cust.currentWpIndex++;
           if (cust.currentWpIndex >= cust.waypoints.length || curPos.z >= 24.5) {
-            // Reached village end, despawn
             if (cust.bubbleEl) cust.bubbleEl.remove();
             scene.remove(cust.mesh.root);
             customers.splice(i, 1);
@@ -7755,12 +8140,8 @@
           const step = Math.min(dist, cust.speed * dt);
           curPos.x += (dx / dist) * step;
           curPos.z += (dz / dist) * step;
-
           const targetYaw = Math.atan2(dx, dz);
-          let diff = targetYaw - cust.mesh.root.rotation.y;
-          while (diff < -Math.PI) diff += Math.PI * 2;
-          while (diff > Math.PI) diff -= Math.PI * 2;
-          cust.mesh.root.rotation.y += diff * Math.min(1.0, dt * 8.0);
+          cust.mesh.root.rotation.y = lerpAngle(cust.mesh.root.rotation.y, targetYaw, dt * 8.0);
 
           cust.walkCycle += dt * 8.5;
           cust.mesh.legL.rotation.x = Math.sin(cust.walkCycle) * 0.45;
@@ -7771,7 +8152,7 @@
       }
 
       // Update 3D Billboard Speech Bubble Positioning
-      if (cust.bubbleEl && (cust.state === 'waiting' || cust.state === 'drinking' || cust.state === 'walk_out')) {
+      if (cust.bubbleEl && (cust.state === 'waiting' || cust.state === 'drinking' || cust.state === 'walk_out' || cust.state === 'walk_to_lift' || cust.state === 'wait_lift' || cust.state === 'riding_lift')) {
         const headPos = cust.mesh.head.getWorldPosition(new THREE.Vector3());
         headPos.y += 0.55;
         headPos.project(camera);
