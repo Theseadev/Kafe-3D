@@ -2871,7 +2871,7 @@
     doorOpenAmount: 0.0,
     doorTarget: 0.0,
     doorHoldTimer: 0.0,
-    speed: 5.5,
+    speed: 6.0,
     cabinGroup: elevatorCabin,
     cabDoorL: cabDoorL,
     cabDoorR: cabDoorR,
@@ -2882,19 +2882,15 @@
     callElevatorToFloor: function(floorNum) {
       if (!ELEVATOR_CONFIG.floors[floorNum]) return;
       if (this.currentFloor === floorNum && !this.isMoving) {
-        this.doorTarget = 1.0; // Sudah di lantai ini, buka pintu untuk penumpang
-        this.doorHoldTimer = 3.0;
+        this.doorTarget = 1.0;
+        this.doorHoldTimer = Math.max(this.doorHoldTimer, 3.0);
         return;
       }
       if (this.targetFloor === floorNum && this.isMoving) {
-        return; // Sedang meluncur ke lantai ini
+        return;
       }
       if (!this.callQueue.includes(floorNum)) {
         this.callQueue.push(floorNum);
-      }
-      // Jika lift sedang diam di lantai lain, segera tutup pintu dan mulai meluncur
-      if (!this.isMoving) {
-        this.doorTarget = 0.0;
       }
     },
 
@@ -2907,9 +2903,17 @@
         return;
       }
 
+      if (this.isMoving) {
+        if (this.targetFloor !== floorNum && !this.callQueue.includes(floorNum)) {
+          this.callQueue.push(floorNum);
+        }
+        return;
+      }
+
       this.targetFloor = floorNum;
       this.targetY = ELEVATOR_CONFIG.floors[floorNum].y;
-      this.doorTarget = 0.0; // PINTU OTOMATIS KETUTUP KETIKA KLIK TOMBOL LANTAI
+      this.doorHoldTimer = 0.3; // Allow quick smooth door closure
+      this.doorTarget = 0.0;
       this.isMoving = true;
       this.callQueue = this.callQueue.filter(f => f !== floorNum);
 
@@ -2922,13 +2926,21 @@
       const py = player.root.position.y;
       const pz = player.root.position.z;
 
-      // Cek jarak 3D dengan akurat agar pemain di lantai lain tidak memicu deteksi lantai lift
       const distToElevatorXZ = Math.hypot(px - ELEVATOR_CONFIG.posX, pz - ELEVATOR_CONFIG.posZ);
       const isPlayerInside = distToElevatorXZ < 1.35 && Math.abs(py - this.currentY) < 1.5;
       const isPlayerInLobby = (px >= 7.5 && px <= 11.8 && pz >= -5.2 && pz <= -1.8 && Math.abs(py - this.currentY) < 1.5);
       const isPlayerNearDoor = (distToElevatorXZ < 2.8 && Math.abs(py - this.currentY) < 1.5);
 
-      // Cek apakah ada NPC di lantai lift saat ini yang sedang mendekat/menaiki lift
+      // Cek apakah ada NPC yang sedang aktif melangkah masuk atau keluar lift (DILARANG MENUTUP PINTU / PINDAH LANTAI!)
+      const isNpcBoardingOrExiting = customers.some(c => {
+        if (!c.mesh || !c.mesh.root) return false;
+        return (
+          c.state === 'enter_lift' || c.state === 'exit_lift' ||
+          c.state === 'enter_lift_exit' || c.state === 'exit_lift_exit'
+        );
+      });
+
+      // Cek apakah ada NPC di lantai lift saat ini yang menunggu atau mendekat
       const isNpcAtCurrentFloor = customers.some(c => {
         if (!c.mesh || !c.mesh.root) return false;
         const cy = c.mesh.root.position.y;
@@ -2942,11 +2954,19 @@
         );
       });
 
-      // 1. SMART ELEVATOR DISPATCHER & CALL QUEUE PROCESSING
+      // 1. SMART ELEVATOR DISPATCHER & DOOR CONTROL
       if (!this.isMoving) {
-        if (this.callQueue.length > 0) {
-          // Jika ada panggilan dari lantai lain, tutup pintu dan berangkat!
-          if (this.doorOpenAmount < 0.15) {
+        if (isNpcBoardingOrExiting) {
+          // Ada penumpang yang sedang melangkah: tahan pintu tetap terbuka penuh!
+          this.doorTarget = 1.0;
+          this.doorHoldTimer = Math.max(this.doorHoldTimer, 2.0);
+        } else if (this.doorHoldTimer > 0) {
+          // Masih dalam masa jeda buka pintu setelah tiba di lantai
+          this.doorHoldTimer -= dt;
+          this.doorTarget = 1.0;
+        } else if (this.callQueue.length > 0) {
+          // Jeda selesai dan tidak ada penumpang keluar/masuk: layani panggilan lantai lain!
+          if (this.doorOpenAmount < 0.12) {
             const nextFloor = this.callQueue.shift();
             if (nextFloor !== this.currentFloor) {
               this.goToFloor(nextFloor);
@@ -2955,19 +2975,15 @@
               this.doorHoldTimer = 3.0;
             }
           } else {
-            this.doorTarget = 0.0; // Tutup pintu segera agar lift bisa jalan
+            this.doorTarget = 0.0; // Tutup pintu dengan tertib sebelum berangkat
           }
         } else {
-          // Tidak ada antrean panggilan lantai lain: kelola pintu otomatis sesuai keberadaan orang di lantai ini
+          // Tidak ada panggilan: buka jika ada orang di lantai ini, tutup jika sepi
           if (isPlayerInside || isPlayerNearDoor || isPlayerInLobby || isNpcAtCurrentFloor) {
             this.doorTarget = 1.0;
             this.doorHoldTimer = 2.5;
           } else {
-            if (this.doorHoldTimer > 0) {
-              this.doorHoldTimer -= dt;
-            } else {
-              this.doorTarget = 0.0;
-            }
+            this.doorTarget = 0.0;
           }
         }
       }
@@ -3036,8 +3052,8 @@
             this.cabinGroup.position.y = this.currentY;
             this.currentFloor = this.targetFloor;
             this.isMoving = false;
-            this.doorTarget = 1.0; // PINTU OTOMATIS MEMBUKA KEMBALI SETELAH TIBA DI LANTAI TUJUAN!
-            this.doorHoldTimer = 3.5;
+            this.doorTarget = 1.0; // Buka pintu otomatis ketika tiba di lantai tujuan!
+            this.doorHoldTimer = 3.5; // Berikan jeda 3.5s untuk keluar/masuk sebelum melayani panggilan lain!
 
             if (isPlayerInside) {
               player.root.position.y = this.currentY;
@@ -7792,7 +7808,7 @@
         ElevatorSystem.callElevatorToFloor(1);
 
         // Jika lift sudah berada di lantai 1 dan pintunya sudah terbuka lebar
-        if (ElevatorSystem.currentFloor === 1 && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.4) {
+        if (ElevatorSystem.currentFloor === 1 && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.25) {
           cust.state = 'enter_lift';
         }
       }
@@ -7833,8 +7849,13 @@
         cust.mesh.legL.rotation.x = 0;
         cust.mesh.legR.rotation.x = 0;
 
+        // Jika lift sedang berhenti di lantai antara dan bukan lantai tujuan meja, pastikan lantai tujuan tetap dipanggil
+        if (!ElevatorSystem.isMoving && ElevatorSystem.currentFloor !== cust.table.floor) {
+          ElevatorSystem.callElevatorToFloor(cust.table.floor);
+        }
+
         // Cek apakah lift sudah tiba di lantai meja dan pintu sudah terbuka
-        if (ElevatorSystem.currentFloor === cust.table.floor && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.4) {
+        if (ElevatorSystem.currentFloor === cust.table.floor && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.25) {
           cust.state = 'exit_lift';
         }
       }
@@ -8110,7 +8131,7 @@
       else if (cust.state === 'wait_lift_exit') {
         ElevatorSystem.callElevatorToFloor(cust.table.floor);
 
-        if (ElevatorSystem.currentFloor === cust.table.floor && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.4) {
+        if (ElevatorSystem.currentFloor === cust.table.floor && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.25) {
           cust.state = 'enter_lift_exit';
         }
       }
@@ -8140,7 +8161,11 @@
       else if (cust.state === 'riding_lift_exit') {
         curPos.y = ElevatorSystem.currentY;
 
-        if (ElevatorSystem.currentFloor === 1 && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.4) {
+        if (!ElevatorSystem.isMoving && ElevatorSystem.currentFloor !== 1) {
+          ElevatorSystem.callElevatorToFloor(1);
+        }
+
+        if (ElevatorSystem.currentFloor === 1 && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.25) {
           cust.state = 'exit_lift_exit';
         }
       }
