@@ -607,10 +607,11 @@
   };
 
   const MENU_ITEMS = [
-    { id: 'kenangan_mantan', name: 'Es Kopi Kenangan Mantan', icon: '🥤', price: 18000, bg: '#78350f', req: { beans: 1, milk: 1, aren: 1 } },
-    { id: 'latte_art', name: 'Hot Cafe Latte Art', icon: '☕', price: 22000, bg: '#92400e', req: { beans: 1, milk: 2 } },
-    { id: 'matcha_zen', name: 'Matcha Latte Zen', icon: '🍵', price: 24000, bg: '#166534', req: { matcha: 1, milk: 1 } },
-    { id: 'croissant_butter', name: 'Butter Croissant Warm', icon: '🥐', price: 16000, bg: '#b45309', req: { pastry: 1 } }
+    { id: 'kenangan_mantan', name: 'Es Kopi Kenangan Mantan', icon: '🥤', price: 18000, bg: '#78350f', type: 'coffee', req: { beans: 1, milk: 1, aren: 1 } },
+    { id: 'latte_art', name: 'Hot Cafe Latte Art', icon: '☕', price: 22000, bg: '#92400e', type: 'latte', req: { beans: 1, milk: 2 } },
+    { id: 'matcha_zen', name: 'Matcha Latte Zen', icon: '🍵', price: 24000, bg: '#166534', type: 'matcha', req: { matcha: 1, milk: 1 } },
+    { id: 'donut_glazed', name: 'Donat Cokelat Meises', icon: '🍩', price: 15000, bg: '#831843', type: 'donut', req: { pastry: 1 } },
+    { id: 'croissant_butter', name: 'Butter Croissant Warm', icon: '🥐', price: 16000, bg: '#b45309', type: 'croissant', req: { pastry: 1 } }
   ];
 
   const MARKET_ITEMS = [
@@ -937,6 +938,11 @@
     doorGlass: new THREE.MeshStandardMaterial({ color: 0xd0ebff, transparent: true, opacity: 0.38, roughness: 0.05, metalness: 0.25, side: THREE.DoubleSide }),
     croissantGold: new THREE.MeshStandardMaterial({ color: 0xD9933B, roughness: 0.45 }),
     donutDough: new THREE.MeshStandardMaterial({ color: 0xE8B677, roughness: 0.5 }),
+    donutGlazeChoco: new THREE.MeshStandardMaterial({ color: 0x3E1C0A, roughness: 0.35 }),
+    donutGlazePink: new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.35 }),
+    donutSprinkles: new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 }),
+    matchaFoam: new THREE.MeshStandardMaterial({ color: 0x86efac, roughness: 0.5 }),
+    latteFoam: new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.6 }),
     neonGold: new THREE.MeshStandardMaterial({ color: 0xFFB300, emissive: 0xFFA000, emissiveIntensity: 1.4, roughness: 0.2 }),
     lampFilament: new THREE.MeshStandardMaterial({ color: 0xFFEEAA, emissive: 0xFFBB44, emissiveIntensity: 2.2, roughness: 0.1 }),
     matcha: new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.6 }),
@@ -1988,8 +1994,133 @@
   createPendantLamp(3.8, 4.7, 3.5);
 
 /* ==========================================================================
-     10. 3D SERVING TRAY PROP (NAMPAN SAJI REALISTIS)
+     10. UNIFIED 3D FOOD & DRINK PROP GENERATOR (Kopi, Matcha, Croissant, Donat)
      ========================================================================== */
+  function createFoodOrDrinkProp(itemOrType, isMini = false) {
+    const group = new THREE.Group();
+    let type = 'coffee';
+    if (typeof itemOrType === 'string') {
+      type = itemOrType;
+    } else if (itemOrType && typeof itemOrType === 'object') {
+      type = itemOrType.type || itemOrType.id || 'coffee';
+    }
+
+    const t = (type || '').toLowerCase();
+
+    if (t.includes('donut')) {
+      // 🍩 Ceramic White Plate + Glazed Donut + Sprinkles
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.15, 0.02, 20), Mat.shirtWhite);
+      plate.position.y = 0.01;
+      plate.castShadow = true;
+      group.add(plate);
+
+      // Donut Dough Ring
+      const donutMesh = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.04, 12, 24), Mat.donutDough);
+      donutMesh.rotation.x = Math.PI / 2;
+      donutMesh.position.y = 0.055;
+      donutMesh.castShadow = true;
+      group.add(donutMesh);
+
+      // Rich Chocolate Glaze Frosting
+      const glazeMesh = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.032, 10, 24, Math.PI * 2), Mat.donutGlazeChoco || Mat.coffeeDark);
+      glazeMesh.rotation.x = Math.PI / 2;
+      glazeMesh.position.y = 0.075;
+      group.add(glazeMesh);
+
+      // Rainbow / Golden Sprinkles
+      for (let s = 0; s < 6; s++) {
+        const ang = (s / 6) * Math.PI * 2;
+        const sp = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.006, 0.025), Mat.donutSprinkles || Mat.neonGold);
+        sp.position.set(Math.cos(ang) * 0.08, 0.095, Math.sin(ang) * 0.08);
+        sp.rotation.y = ang + 0.3;
+        group.add(sp);
+      }
+    } else if (t.includes('croissant')) {
+      // 🥐 Ceramic White Plate + Golden Flaky Croissant Crescent
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.15, 0.02, 20), Mat.shirtWhite);
+      plate.position.y = 0.01;
+      plate.castShadow = true;
+      group.add(plate);
+
+      const crMesh = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.038, 10, 20, Math.PI * 1.15), Mat.croissantGold);
+      crMesh.rotation.x = Math.PI / 2;
+      crMesh.rotation.z = Math.PI * 0.42;
+      crMesh.position.y = 0.05;
+      crMesh.castShadow = true;
+
+      const centerPuff = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), Mat.croissantGold);
+      centerPuff.scale.set(1.4, 0.9, 1.1);
+      centerPuff.position.set(0, 0.055, 0.03);
+      group.add(plate, crMesh, centerPuff);
+    } else if (t.includes('matcha')) {
+      // 🍵 Matcha Zen Japanese Ceramic Cup + Green Tea Liquid + Matcha Foam
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.18, 18), Mat.shirtWhite);
+      cup.position.y = 0.09;
+      cup.castShadow = true;
+
+      const matchaLiq = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.082, 0.02, 16), Mat.matcha);
+      matchaLiq.position.y = 0.165;
+
+      const matchaFoam = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.015, 8, 16), Mat.matchaFoam || Mat.matcha);
+      matchaFoam.rotation.x = Math.PI / 2;
+      matchaFoam.position.y = 0.175;
+
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.012, 8, 12, Math.PI), Mat.shirtWhite);
+      handle.position.set(0.095, 0.08, 0);
+      group.add(cup, matchaLiq, matchaFoam, handle);
+    } else if (t.includes('latte')) {
+      // ☕ Hot Cafe Latte Cup + Latte Art Heart Foam
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.18, 18), Mat.shirtWhite);
+      cup.position.y = 0.09;
+      cup.castShadow = true;
+
+      const liq = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.082, 0.02, 16), Mat.coffeeDark);
+      liq.position.y = 0.165;
+
+      const latteHeart = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), Mat.latteFoam || Mat.shirtWhite);
+      latteHeart.scale.set(1.2, 0.2, 1.0);
+      latteHeart.position.y = 0.175;
+
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.012, 8, 12, Math.PI), Mat.shirtWhite);
+      handle.position.set(0.095, 0.08, 0);
+      group.add(cup, liq, latteHeart, handle);
+    } else if (t.includes('espresso') || t.includes('bean')) {
+      // ☕ Espresso Demitasse / Beans Cup
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.14, 16), Mat.shirtWhite);
+      cup.position.y = 0.07;
+      const saucer = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.02, 16), Mat.shirtWhite);
+      saucer.position.y = 0.01;
+      const liq = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.02, 16), Mat.coffeeDark);
+      liq.position.y = 0.125;
+      group.add(saucer, cup, liq);
+    } else {
+      // 🥤 Es Kopi Kenangan Mantan (Signature Cold Tumbler with Straw)
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.065, 0.22, 18), Mat.clearGlass);
+      cup.position.y = 0.11;
+      cup.castShadow = true;
+
+      const liq = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.06, 0.16, 16), Mat.coffeeDark);
+      liq.position.y = 0.09;
+
+      const milkLayer = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.078, 0.04, 16), Mat.shirtWhite);
+      milkLayer.position.y = 0.18;
+
+      const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.02, 16), Mat.shirtWhite);
+      lid.position.y = 0.22;
+
+      const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.26, 8), Mat.neonGold);
+      straw.position.set(0.02, 0.25, 0);
+      straw.rotation.z = -0.22;
+
+      group.add(cup, liq, milkLayer, lid, straw);
+    }
+
+    if (isMini) {
+      group.scale.set(0.7, 0.7, 0.7);
+    }
+    return group;
+  }
+
   function createServingTrayProp(itemType) {
     const trayGroup = new THREE.Group();
 
@@ -2015,34 +2146,55 @@
     handleR.rotation.z = -Math.PI / 2;
     trayGroup.add(handleL, handleR);
 
-    if (itemType === 'espresso' || itemType === 'beans') {
-      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.07, 0.16, 16), Mat.shirtWhite);
-      cup.position.set(0, 0.1, 0);
-      const saucer = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.02, 16), Mat.shirtWhite);
-      saucer.position.set(0, 0.03, 0);
-      const coffeeLiquid = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.02, 16), Mat.coffeeDark);
-      coffeeLiquid.position.set(0, 0.17, 0);
-      trayGroup.add(cup, saucer, coffeeLiquid);
-    } else if (itemType === 'coffee' || itemType === 'matcha') {
-      const tumbler = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.3, 16), itemType === 'matcha' ? Mat.matcha : Mat.coffeeDark);
-      tumbler.position.set(0, 0.17, 0);
-      const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.04, 16), Mat.shirtWhite);
-      lid.position.set(0, 0.33, 0);
-      const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.2, 8), Mat.brassGold);
-      straw.position.set(0.03, 0.4, 0);
-      straw.rotation.z = 0.2;
-      trayGroup.add(tumbler, lid, straw);
-    } else if (itemType === 'croissant' || itemType === 'donut') {
-      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.18, 0.02, 16), Mat.marbleTop);
-      plate.position.set(0, 0.03, 0);
-      const food = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.05, 12, 16), itemType === 'donut' ? Mat.donutDough : Mat.croissantGold);
-      food.rotation.x = Math.PI / 2;
-      food.position.set(0, 0.09, 0);
-      trayGroup.add(plate, food);
+    if (itemType) {
+      const foodProp = createFoodOrDrinkProp(itemType);
+      foodProp.position.set(0, 0.02, 0);
+      trayGroup.add(foodProp);
     }
 
     return trayGroup;
   }
+
+  function createCoffeeCup(isMini = false) {
+    return createFoodOrDrinkProp('coffee', isMini);
+  }
+
+  // Mini espresso cup for Barista Sarah
+  const miniSarahCup = createCoffeeCup(true);
+  miniSarahCup.visible = false;
+  scene.add(miniSarahCup);
+
+  // Waiter Andi Serving Cup
+  const waiterCup = createCoffeeCup(true);
+  waiterCup.visible = false;
+  scene.add(waiterCup);
+
+  // 4. Pedestrian Collision Avoidance AI
+  const pedestrianAvoidanceSystem = {
+    update: function(dt) {
+      if (villagePedestrians.length === 0) return;
+      for (let i = 0; i < villagePedestrians.length; i++) {
+        for (let j = i + 1; j < villagePedestrians.length; j++) {
+          const p1 = villagePedestrians[i];
+          const p2 = villagePedestrians[j];
+          const pos1 = p1.mesh.root.position;
+          const pos2 = p2.mesh.root.position;
+          const dx = pos1.x - pos2.x;
+          const dz = pos1.z - pos2.z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          if (dist < 1.4 && dist > 0.01) {
+            const push = (1.4 - dist) * 0.5;
+            const nx = dx / dist;
+            const nz = dz / dist;
+            pos1.x += nx * push * dt * 3.0;
+            pos1.z += nz * push * dt * 3.0;
+            pos2.x -= nx * push * dt * 3.0;
+            pos2.z -= nz * push * dt * 3.0;
+          }
+        }
+      }
+    }
+  };
 
   /* ==========================================================================
      11. HUMANOID CHARACTER BUILDER
@@ -3690,27 +3842,12 @@
   sajiPlatter.castShadow = true;
   scene.add(sajiPlatter);
 
-  // 3-Slot 3D Counter Props (Slot 0: Kiri, Slot 1: Tengah, Slot 2: Kanan)
+  // 3-Slot 3D Dynamic Serving Counter Props (Slot 0: Kiri, Slot 1: Tengah, Slot 2: Kanan)
   const sajiSlots = [];
   const slotOffsets = [-0.45, 0.0, 0.45];
   
   slotOffsets.forEach((ox, idx) => {
     const slotGroup = new THREE.Group();
-    // 3D Coffee Cup
-    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.26, 16), Mat.shirtWhite);
-    cup.castShadow = true;
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.02, 8, 16), Mat.shirtWhite);
-    rim.rotation.x = Math.PI / 2;
-    rim.position.y = 0.13;
-    // Coffee liquid
-    const liquid = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.02, 12), Mat.coffeeLiquid);
-    liquid.position.y = 0.11;
-    // Steam particle ring
-    const steam = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.015, 6, 12), Mat.steamParticle);
-    steam.rotation.x = Math.PI / 2;
-    steam.position.y = 0.22;
-
-    slotGroup.add(cup, rim, liquid, steam);
     slotGroup.position.set(0.8 + ox, 1.38, -2.0);
     slotGroup.visible = false;
     scene.add(slotGroup);
@@ -3722,7 +3859,18 @@
 
   function updateCounterProps() {
     sajiSlots.forEach((slot, idx) => {
-      slot.visible = (idx < readyDrinksOnCounter.length);
+      // Clear previous props
+      while (slot.children.length > 0) {
+        slot.remove(slot.children[0]);
+      }
+      if (idx < readyDrinksOnCounter.length) {
+        const item = readyDrinksOnCounter[idx];
+        const prop = createFoodOrDrinkProp(item.type || item.id || 'coffee');
+        slot.add(prop);
+        slot.visible = true;
+      } else {
+        slot.visible = false;
+      }
     });
   }
 
@@ -3917,6 +4065,7 @@
     target: null,
     targetYaw: Math.PI,
     batchCount: 3,
+    batchItems: [],
 
     update: function(dt) {
       if (barista.knockdown && barista.knockdown.active) return;
@@ -3932,10 +4081,36 @@
 
         // Check if counter has space (< 3 ready drinks)
         if (readyDrinksOnCounter.length < 3 && this.timer > 1.2) {
-          this.batchCount = 3 - readyDrinksOnCounter.length;
+          const needed = 3 - readyDrinksOnCounter.length;
+          this.batchCount = needed;
+
+          // Determine what items to prepare based on waiting customers' orders first!
+          const waitingCusts = tables.filter(t => t.customer && t.customer.state === 'waiting');
+          this.batchItems = [];
+          
+          for (let i = 0; i < needed; i++) {
+            if (i < waitingCusts.length) {
+              this.batchItems.push(waitingCusts[i].customer.order);
+            } else {
+              const fallback = MENU_ITEMS[(readyDrinksOnCounter.length + i) % MENU_ITEMS.length];
+              this.batchItems.push(fallback);
+            }
+          }
+
+          const hasPastry = this.batchItems.some(item => item.type === 'donut' || item.type === 'croissant' || item.id.includes('donut') || item.id.includes('croissant'));
+          const hasMatcha = this.batchItems.some(item => item.type === 'matcha' || item.id.includes('matcha'));
+          const hasCoffee = this.batchItems.some(item => item.type === 'coffee' || item.type === 'latte' || item.id.includes('kenangan') || item.id.includes('latte'));
+
           this.state = 'walk_grinder';
           this.target = new THREE.Vector3(-3.2, 0, -4.30);
-          updateStaffBubble(baristaBubble, `☕ Menggiling Biji untuk ${this.batchCount} Pesanan Sekaligus!`);
+          
+          if (hasPastry && !hasCoffee && !hasMatcha) {
+            updateStaffBubble(baristaBubble, `🥐 Menyiapkan Donat & Pastry Fresh (${this.batchCount} Porsi)!`);
+          } else if (hasMatcha && !hasCoffee) {
+            updateStaffBubble(baristaBubble, `🍵 Mengocok Bubuk Matcha Zen Fresh (${this.batchCount} Porsi)!`);
+          } else {
+            updateStaffBubble(baristaBubble, `☕ Meracik ${this.batchCount} Pesanan Kopi, Matcha & Donat!`);
+          }
         }
       } else if (this.state === 'walk_grinder') {
         if (this.walkTowards(this.target, dt)) {
@@ -3946,10 +4121,10 @@
       } else if (this.state === 'grinding') {
         this.targetYaw = Math.PI;
         if (barista.syncBones) barista.syncBones('grind', this.timer, 0, dt);
-        if (this.timer > 2.2) {
+        if (this.timer > 2.0) {
           this.state = 'walk_espresso';
           this.target = new THREE.Vector3(-1.0, 0, -4.30);
-          updateStaffBubble(baristaBubble, `🔥 Menyeduh ${this.batchCount} Shot Espresso Bersamaan!`);
+          updateStaffBubble(baristaBubble, `🔥 Menyeduh Espresso & Mengocok Matcha (${this.batchCount} Batch)!`);
         }
       } else if (this.state === 'walk_espresso') {
         if (this.walkTowards(this.target, dt)) {
@@ -3961,10 +4136,10 @@
       } else if (this.state === 'brewing') {
         this.targetYaw = Math.PI;
         if (barista.syncBones) barista.syncBones('brew', this.timer, 0, dt);
-        if (this.timer > 2.4) {
+        if (this.timer > 2.0) {
           this.state = 'walk_milk';
           this.target = new THREE.Vector3(1.2, 0, -4.30);
-          updateStaffBubble(baristaBubble, `🥛 Steam Susu & Racik ${this.batchCount} Minuman/Makanan!`);
+          updateStaffBubble(baristaBubble, `🥛 Steam Susu & Menghangatkan Donat/Pastry!`);
         }
       } else if (this.state === 'walk_milk') {
         if (this.walkTowards(this.target, dt)) {
@@ -3975,11 +4150,12 @@
       } else if (this.state === 'steaming') {
         this.targetYaw = Math.PI;
         if (barista.syncBones) barista.syncBones('steam', this.timer, 0, dt);
-        if (this.timer > 2.2) {
-          barista.setTray('coffee');
+        if (this.timer > 2.0) {
+          const firstType = (this.batchItems && this.batchItems.length > 0) ? (this.batchItems[0].type || this.batchItems[0].id) : 'coffee';
+          barista.setTray(firstType);
           this.state = 'walk_front';
           this.target = new THREE.Vector3(0.8, 0, -3.15);
-          updateStaffBubble(baristaBubble, `✨ Membawa ${this.batchCount} Pesanan ke Meja Saji!`);
+          updateStaffBubble(baristaBubble, `✨ Membawa ${this.batchCount} Pesanan Jadi ke Meja Saji!`);
         }
       } else if (this.state === 'walk_front') {
         if (this.walkTowards(this.target, dt)) {
@@ -3990,17 +4166,42 @@
       } else if (this.state === 'serving') {
         this.targetYaw = 0;
         if (barista.syncBones) barista.syncBones('tray', this.timer, 0, dt);
-        if (this.timer > 1.2) {
-          // Fill counter up to 3 slots!
-          while (readyDrinksOnCounter.length < 3) {
-            readyDrinksOnCounter.push({ type: 'coffee', readyTime: performance.now() });
+        if (this.timer > 1.0) {
+          // Fill counter with the exact prepared batch items!
+          if (this.batchItems && this.batchItems.length > 0) {
+            this.batchItems.forEach(item => {
+              if (readyDrinksOnCounter.length < 3) {
+                readyDrinksOnCounter.push({
+                  id: item.id,
+                  name: item.name,
+                  type: item.type || item.id,
+                  icon: item.icon,
+                  price: item.price,
+                  req: item.req,
+                  readyTime: performance.now()
+                });
+              }
+            });
+          } else {
+            while (readyDrinksOnCounter.length < 3) {
+              const fallback = MENU_ITEMS[readyDrinksOnCounter.length % MENU_ITEMS.length];
+              readyDrinksOnCounter.push({
+                id: fallback.id,
+                name: fallback.name,
+                type: fallback.type || fallback.id,
+                icon: fallback.icon,
+                price: fallback.price,
+                req: fallback.req,
+                readyTime: performance.now()
+              });
+            }
           }
           updateCounterProps();
           audio.playCash();
           barista.setTray(null);
           this.state = 'walk_back';
           this.target = new THREE.Vector3(-1.0, 0, -3.85);
-          updateStaffBubble(baristaBubble, `🛎️ 3 Pesanan Siap Saji! Andi silakan antar!`);
+          updateStaffBubble(baristaBubble, `🛎️ ${this.batchCount} Pesanan Siap Saji! Andi silakan antar!`);
         }
       } else if (this.state === 'walk_back') {
         if (this.walkTowards(this.target, dt)) {
@@ -4039,6 +4240,8 @@
   const waiterAI = {
     state: 'idle',
     targetTable: null,
+    targetCustomer: null,
+    carryingItem: null,
     timer: 0,
     speed: 3.2,
     walkCycle: 0,
@@ -4049,17 +4252,47 @@
       if (waiter.knockdown && waiter.knockdown.active) return;
       this.timer += dt;
 
-      // Find any table with a customer waiting for drinks
-      const waitingTable = tables.find(t => t.customer && t.customer.state === 'waiting');
-
       if (this.state === 'idle') {
         waiter.setTray(null);
-        // If there is a waiting customer AND there is a ready drink on counter:
-        if (waitingTable && readyDrinksOnCounter.length > 0) {
-          this.targetTable = waitingTable;
+        this.carryingItem = null;
+
+        // Find a waiting customer whose ordered item is ready on the counter
+        const waitingTables = tables.filter(t => t.customer && t.customer.state === 'waiting');
+        let matchedTable = null;
+        let matchedItemIndex = -1;
+
+        for (const tbl of waitingTables) {
+          const cust = tbl.customer;
+          const idx = readyDrinksOnCounter.findIndex(item => 
+            item.id === cust.order.id || 
+            item.type === cust.order.type || 
+            item.type === cust.order.id ||
+            (cust.order.id.includes('donut') && (item.type === 'donut' || item.id.includes('donut'))) ||
+            (cust.order.id.includes('croissant') && (item.type === 'croissant' || item.id.includes('croissant'))) ||
+            (cust.order.id.includes('matcha') && (item.type === 'matcha' || item.id.includes('matcha'))) ||
+            (cust.order.id.includes('kenangan') && (item.type === 'coffee' || item.id.includes('kenangan'))) ||
+            (cust.order.id.includes('latte') && (item.type === 'coffee' || item.type === 'latte' || item.id.includes('latte')))
+          );
+          if (idx !== -1) {
+            matchedTable = tbl;
+            matchedItemIndex = idx;
+            break;
+          }
+        }
+
+        // If matched item is found, go pick it up!
+        if (matchedTable && matchedItemIndex !== -1) {
+          this.targetTable = matchedTable;
+          this.targetCustomer = matchedTable.customer;
           this.state = 'walk_saji';
           this.timer = 0;
-          updateStaffBubble(waiterBubble, '🏃‍♂️ Mengambil pesanan di Meja Saji...');
+          updateStaffBubble(waiterBubble, `🏃‍♂️ Mengambil ${this.targetCustomer.order.name} di Meja Saji...`);
+        } else if (waitingTables.length > 0 && readyDrinksOnCounter.length === 0) {
+          if (this.timer > 3.5) {
+            this.timer = 0;
+            updateStaffBubble(waiterBubble, `⏳ Menunggu Sarah meracik ${waitingTables[0].customer.order.name}...`);
+            setTimeout(() => { if (this.state === 'idle' && waiterBubble) waiterBubble.style.display = 'none'; }, 2000);
+          }
         }
       } else if (this.state === 'walk_saji') {
         if (this.walkTowards(this.sajiPos, dt)) {
@@ -4067,20 +4300,33 @@
           this.timer = 0;
         }
       } else if (this.state === 'pickup') {
-        if (this.timer > 0.4) {
-          if (readyDrinksOnCounter.length > 0) {
-            readyDrinksOnCounter.pop();
-            updateCounterProps();
+        if (this.timer > 0.35) {
+          if (!this.targetCustomer || this.targetCustomer.state !== 'waiting') {
+            this.state = 'walk_rest';
+            return;
           }
-          waiter.setTray('coffee');
-          
-          // Re-verify waiting customer
-          const curWaiting = tables.find(t => t.customer && t.customer.state === 'waiting');
-          if (curWaiting) {
-            this.targetTable = curWaiting;
+
+          let itemIdx = readyDrinksOnCounter.findIndex(item => 
+            item.id === this.targetCustomer.order.id || 
+            item.type === this.targetCustomer.order.type || 
+            item.type === this.targetCustomer.order.id ||
+            (this.targetCustomer.order.id.includes('donut') && (item.type === 'donut' || item.id.includes('donut'))) ||
+            (this.targetCustomer.order.id.includes('croissant') && (item.type === 'croissant' || item.id.includes('croissant'))) ||
+            (this.targetCustomer.order.id.includes('matcha') && (item.type === 'matcha' || item.id.includes('matcha')))
+          );
+
+          if (itemIdx === -1 && readyDrinksOnCounter.length > 0) itemIdx = 0;
+
+          if (itemIdx !== -1 && readyDrinksOnCounter.length > 0) {
+            this.carryingItem = readyDrinksOnCounter.splice(itemIdx, 1)[0];
+            updateCounterProps();
+            
+            const trayType = this.carryingItem.type || this.carryingItem.id || 'coffee';
+            waiter.setTray(trayType);
+
             this.state = 'walk_table';
             this.timer = 0;
-            updateStaffBubble(waiterBubble, `☕ Mengantar ke Meja ${this.targetTable.id}...`);
+            updateStaffBubble(waiterBubble, `${this.targetCustomer.order.icon} Mengantar ${this.targetCustomer.order.name} ke Meja ${this.targetTable.id}...`);
           } else {
             waiter.setTray(null);
             this.state = 'walk_rest';
@@ -4091,6 +4337,7 @@
           const otherWaiting = tables.find(t => t.customer && t.customer.state === 'waiting');
           if (otherWaiting) {
             this.targetTable = otherWaiting;
+            this.targetCustomer = otherWaiting.customer;
           } else {
             waiter.setTray(null);
             this.state = 'walk_rest';
@@ -4104,18 +4351,17 @@
           this.timer = 0;
         }
       } else if (this.state === 'serve') {
-        if (this.timer > 0.6) {
+        if (this.timer > 0.5) {
           if (this.targetTable && this.targetTable.customer && this.targetTable.customer.state === 'waiting') {
             serveCustomer(this.targetTable.customer, 'Pelayan Andi');
-            updateStaffBubble(waiterBubble, '😊 Silakan dinikmati pesanan segarnya!');
+            updateStaffBubble(waiterBubble, `😊 Silakan dinikmati ${this.targetTable.customer.order.name} pesanannya!`);
           }
           waiter.setTray(null);
+          this.carryingItem = null;
 
-          // Check if there are more ready drinks and waiting customers:
-          const nextWaiting = tables.find(t => t.customer && t.customer.state === 'waiting');
+          const nextWaiting = tables.some(t => t.customer && t.customer.state === 'waiting');
           if (nextWaiting && readyDrinksOnCounter.length > 0) {
-            this.targetTable = nextWaiting;
-            this.state = 'walk_saji';
+            this.state = 'idle';
             this.timer = 0;
           } else {
             this.state = 'walk_rest';
@@ -4233,40 +4479,9 @@
   }
 
   function createCustomerCupProp(order) {
-    const cupGroup = new THREE.Group();
-    if (order.id === 'croissant') {
-      const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 0.02, 16), Mat.shirtWhite);
-      const cr = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.03, 8, 12, Math.PI), Mat.croissantGold);
-      cr.rotation.x = Math.PI / 2;
-      cr.position.y = 0.03;
-      cupGroup.add(plate, cr);
-    } else if (order.id === 'matcha') {
-      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.14, 16), Mat.shirtWhite);
-      const matchaLiquid = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.02, 16), Mat.matcha);
-      matchaLiquid.position.y = 0.06;
-      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.012, 8, 12, Math.PI), Mat.shirtWhite);
-      handle.position.set(0.07, 0, 0);
-      cupGroup.add(cup, matchaLiquid, handle);
-    } else if (order.id === 'kopi_kenangan' || order.id === 'latte') {
-      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.16, 16), Mat.clearGlass);
-      const coffeeLiquid = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.048, 0.13, 16), Mat.espressoLiquid);
-      coffeeLiquid.position.y = -0.01;
-      const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.02, 16), Mat.shirtWhite);
-      lid.position.y = 0.08;
-      const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.22, 8), Mat.neonGold);
-      straw.rotation.z = -0.2;
-      straw.position.set(0.02, 0.12, 0);
-      cupGroup.add(cup, coffeeLiquid, lid, straw);
-    } else {
-      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.05, 0.12, 16), Mat.shirtWhite);
-      const liquid = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.02, 16), Mat.espressoLiquid);
-      liquid.position.y = 0.05;
-      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.012, 8, 12, Math.PI), Mat.shirtWhite);
-      handle.position.set(0.065, 0, 0);
-      cupGroup.add(cup, liquid, handle);
-    }
-    cupGroup.scale.set(1.2, 1.2, 1.2);
-    return cupGroup;
+    const prop = createFoodOrDrinkProp(order);
+    prop.scale.set(1.15, 1.15, 1.15);
+    return prop;
   }
 
   function serveCustomer(cust, serverName = 'Player') {
@@ -4274,10 +4489,17 @@
     cust.state = 'drinking';
     cust.drinkTimer = 6.0;
 
-    // Attach 3D drink cup prop to customer's right hand
+    // Attach accurate 3D food/drink prop to customer's right hand
     if (cust.cupProp) cust.mesh.armR.remove(cust.cupProp);
     cust.cupProp = createCustomerCupProp(cust.order);
-    cust.cupProp.position.set(0, -0.48, 0.12);
+    
+    // Plate vs Cup positioning
+    const isPlate = (cust.order.type === 'donut' || cust.order.type === 'croissant' || cust.order.id.includes('donut') || cust.order.id.includes('croissant'));
+    if (isPlate) {
+      cust.cupProp.position.set(0, -0.48, 0.15);
+    } else {
+      cust.cupProp.position.set(0, -0.48, 0.12);
+    }
     cust.mesh.armR.add(cust.cupProp);
 
     // Deduct raw ingredients if available
@@ -4289,9 +4511,10 @@
       }
     }
 
+    const itemIcon = cust.order.icon || '😋';
     cust.bubbleEl.innerHTML = `
       <div class="order-bubble-card border-emerald-500 bg-emerald-50">
-        <span class="text-xl">😋</span>
+        <span class="text-xl">${itemIcon}</span>
         <span class="font-outfit font-bold text-xs text-emerald-900">Menikmati ${cust.order.name}...</span>
       </div>
       <div class="order-bubble-tail border-t-emerald-500"></div>
@@ -5237,27 +5460,39 @@
       updateHandHUD('☕ Shot Espresso Panas');
       audio.playBrew();
     } else if (key === 'milk' || key === 'aren') {
-      GAME_STATE.heldItem = 'coffee';
+      GAME_STATE.heldItem = 'kenangan_mantan';
       player.setTray('coffee');
       updateHandHUD('🥤 Es Kopi Kenangan Mantan');
       audio.playBrew();
     } else if (key === 'matcha') {
-      GAME_STATE.heldItem = 'matcha';
+      GAME_STATE.heldItem = 'matcha_zen';
       player.setTray('matcha');
       updateHandHUD('🍵 Matcha Latte Zen');
       audio.playBrew();
     } else if (key === 'pastry') {
-      GAME_STATE.heldItem = 'croissant';
-      player.setTray('croissant');
-      updateHandHUD('🥐 Butter Croissant Panas');
+      if (GAME_STATE.heldItem === 'donut_glazed') {
+        GAME_STATE.heldItem = 'croissant_butter';
+        player.setTray('croissant');
+        updateHandHUD('🥐 Butter Croissant Warm');
+      } else {
+        GAME_STATE.heldItem = 'donut_glazed';
+        player.setTray('donut');
+        updateHandHUD('🍩 Donat Cokelat Meises');
+      }
       audio.playDing();
     } else if (key === 'saji') {
-      if (sajiCoffeeProp.visible || readyDrinksOnCounter.length > 0) {
+      if (readyDrinksOnCounter.length > 0) {
+        const item = readyDrinksOnCounter.shift();
+        updateCounterProps();
+        GAME_STATE.heldItem = item.id || item.type;
+        player.setTray(item.type || item.id);
+        updateHandHUD(`${item.icon || '🍽️'} ${item.name}`);
+        audio.playCash();
+      } else if (sajiCoffeeProp.visible) {
         sajiCoffeeProp.visible = false;
-        readyDrinksOnCounter.pop();
-        GAME_STATE.heldItem = 'coffee';
+        GAME_STATE.heldItem = 'kenangan_mantan';
         player.setTray('coffee');
-        updateHandHUD('🥤 Kopi Racikan Barista Sarah');
+        updateHandHUD('🥤 Es Kopi Kenangan Mantan');
       }
     } else if (key === 'market') {
       openMarketModal();
