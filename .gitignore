@@ -1,0 +1,10 @@
+﻿node_modules/
+vendor/
+*.log
+screenshot_verify.png
+coop_test_screenshot.png
+edge_screenshot.png
+headless_dom.html
+debug_main.js
+.DS_Store
+Thumbs.db
