@@ -2868,9 +2868,10 @@
     currentY: 0.05,
     targetY: 0.05,
     isMoving: false,
-    doorOpenAmount: 0.0, // Start closed, opens smoothly when player/NPC approaches
+    doorOpenAmount: 0.0,
     doorTarget: 0.0,
-    speed: 4.5,
+    doorHoldTimer: 0.0,
+    speed: 5.5,
     cabinGroup: elevatorCabin,
     cabDoorL: cabDoorL,
     cabDoorR: cabDoorR,
@@ -2882,10 +2883,18 @@
       if (!ELEVATOR_CONFIG.floors[floorNum]) return;
       if (this.currentFloor === floorNum && !this.isMoving) {
         this.doorTarget = 1.0; // Sudah di lantai ini, buka pintu untuk penumpang
+        this.doorHoldTimer = 3.0;
         return;
       }
-      if (!this.callQueue.includes(floorNum) && this.targetFloor !== floorNum) {
+      if (this.targetFloor === floorNum && this.isMoving) {
+        return; // Sedang meluncur ke lantai ini
+      }
+      if (!this.callQueue.includes(floorNum)) {
         this.callQueue.push(floorNum);
+      }
+      // Jika lift sedang diam di lantai lain, segera tutup pintu dan mulai meluncur
+      if (!this.isMoving) {
+        this.doorTarget = 0.0;
       }
     },
 
@@ -2893,7 +2902,8 @@
       if (!ELEVATOR_CONFIG.floors[floorNum]) return;
       if (this.currentFloor === floorNum && !this.isMoving) {
         this.doorTarget = 1.0;
-        showLocationToast(ELEVATOR_CONFIG.floors[floorNum].icon, `Sudah berada di ${ELEVATOR_CONFIG.floors[floorNum].name}`);
+        this.doorHoldTimer = 3.0;
+        showLocationToast(ELEVATOR_CONFIG.floors[floorNum].icon, 'Sudah berada di ' + ELEVATOR_CONFIG.floors[floorNum].name);
         return;
       }
 
@@ -2901,8 +2911,9 @@
       this.targetY = ELEVATOR_CONFIG.floors[floorNum].y;
       this.doorTarget = 0.0; // PINTU OTOMATIS KETUTUP KETIKA KLIK TOMBOL LANTAI
       this.isMoving = true;
+      this.callQueue = this.callQueue.filter(f => f !== floorNum);
 
-      showLocationToast('🛗', `Pintu Menutup... Lift Meluncur ke ${ELEVATOR_CONFIG.floors[floorNum].name}`);
+      showLocationToast('🛗', 'Pintu Menutup... Lift Meluncur ke ' + ELEVATOR_CONFIG.floors[floorNum].name);
       if (audio && audio.playBrew) audio.playBrew();
     },
 
@@ -2911,44 +2922,61 @@
       const py = player.root.position.y;
       const pz = player.root.position.z;
 
-      const distToElevator = Math.hypot(px - ELEVATOR_CONFIG.posX, pz - ELEVATOR_CONFIG.posZ);
-      const isPlayerInside = distToElevator < 1.35;
-      const isPlayerInLobby = (px >= 7.8 && px <= 12.0 && pz >= -5.2 && pz <= -1.8);
+      // Cek jarak 3D dengan akurat agar pemain di lantai lain tidak memicu deteksi lantai lift
+      const distToElevatorXZ = Math.hypot(px - ELEVATOR_CONFIG.posX, pz - ELEVATOR_CONFIG.posZ);
+      const isPlayerInside = distToElevatorXZ < 1.35 && Math.abs(py - this.currentY) < 1.5;
+      const isPlayerInLobby = (px >= 7.5 && px <= 11.8 && pz >= -5.2 && pz <= -1.8 && Math.abs(py - this.currentY) < 1.5);
+      const isPlayerNearDoor = (distToElevatorXZ < 2.8 && Math.abs(py - this.currentY) < 1.5);
 
-      // Check vertical level match (apakah pemain berada di lantai yang sama dengan lift)
-      const isSameFloor = Math.abs(py - this.currentY) < 1.8;
+      // Cek apakah ada NPC di lantai lift saat ini yang sedang mendekat/menaiki lift
+      const isNpcAtCurrentFloor = customers.some(c => {
+        if (!c.mesh || !c.mesh.root) return false;
+        const cy = c.mesh.root.position.y;
+        const cx = c.mesh.root.position.x;
+        const cz = c.mesh.root.position.z;
+        const sameY = Math.abs(cy - this.currentY) < 1.5;
+        const distXZ = Math.hypot(cx - ELEVATOR_CONFIG.posX, cz - ELEVATOR_CONFIG.posZ);
+        return sameY && distXZ < 3.2 && (
+          c.state === 'wait_lift' || c.state === 'enter_lift' || c.state === 'riding_lift' || c.state === 'exit_lift' ||
+          c.state === 'wait_lift_exit' || c.state === 'enter_lift_exit' || c.state === 'riding_lift_exit' || c.state === 'exit_lift_exit'
+        );
+      });
 
       // 1. SMART ELEVATOR DISPATCHER & CALL QUEUE PROCESSING
       if (!this.isMoving) {
-        // Layani antrean panggilan lift jika lift sedang diam dan pintu sudah menutup
-        if (this.callQueue.length > 0 && this.doorOpenAmount < 0.15) {
-          const nextFloor = this.callQueue.shift();
-          if (nextFloor !== this.currentFloor) {
-            this.goToFloor(nextFloor);
+        if (this.callQueue.length > 0) {
+          // Jika ada panggilan dari lantai lain, tutup pintu dan berangkat!
+          if (this.doorOpenAmount < 0.15) {
+            const nextFloor = this.callQueue.shift();
+            if (nextFloor !== this.currentFloor) {
+              this.goToFloor(nextFloor);
+            } else {
+              this.doorTarget = 1.0;
+              this.doorHoldTimer = 3.0;
+            }
           } else {
-            this.doorTarget = 1.0;
+            this.doorTarget = 0.0; // Tutup pintu segera agar lift bisa jalan
           }
-        }
-
-        // Cek apakah ada NPC yang sedang menunggu/naik di lantai lift saat ini
-        const isNpcNearActiveFloor = customers.some(c => {
-          if (!c.mesh || !c.mesh.root) return false;
-          const cy = c.mesh.root.position.y;
-          const sameY = Math.abs(cy - this.currentY) < 1.8;
-          return sameY && (c.state === 'wait_lift' || c.state === 'enter_lift' || c.state === 'riding_lift' || c.state === 'exit_lift' || c.state === 'wait_lift_exit' || c.state === 'enter_lift_exit' || c.state === 'riding_lift_exit' || c.state === 'exit_lift_exit');
-        });
-
-        if (isSameFloor && (isPlayerInside || distToElevator < 2.8 || isPlayerInLobby || isNpcNearActiveFloor)) {
-          this.doorTarget = 1.0; // Buka pintu otomatis
-        } else if (!isPlayerInside && distToElevator >= 3.6 && !isPlayerInLobby && !isNpcNearActiveFloor && this.callQueue.length === 0) {
-          this.doorTarget = 0.0; // Tutup pintu saat tidak ada orang
+        } else {
+          // Tidak ada antrean panggilan lantai lain: kelola pintu otomatis sesuai keberadaan orang di lantai ini
+          if (isPlayerInside || isPlayerNearDoor || isPlayerInLobby || isNpcAtCurrentFloor) {
+            this.doorTarget = 1.0;
+            this.doorHoldTimer = 2.5;
+          } else {
+            if (this.doorHoldTimer > 0) {
+              this.doorHoldTimer -= dt;
+            } else {
+              this.doorTarget = 0.0;
+            }
+          }
         }
       }
 
-      // Show/hide Elevator Floor Selector HUD when in lobby or inside lift
+      // Show/hide Elevator Floor Selector HUD saat pemain di dekat lobi atau di dalam lift
       const hudPanel = document.getElementById('elevator-hud-panel');
       if (hudPanel) {
-        if (isPlayerInLobby || distToElevator < 2.6) {
+        const canShowHud = (isPlayerInLobby || isPlayerInside || (distToElevatorXZ < 2.6 && Math.abs(py - this.currentY) < 1.5));
+        if (canShowHud) {
           hudPanel.classList.remove('hidden');
           requestAnimationFrame(() => {
             hudPanel.classList.remove('opacity-0', 'scale-95');
@@ -2957,13 +2985,18 @@
         } else {
           hudPanel.classList.remove('opacity-100', 'scale-100');
           hudPanel.classList.add('opacity-0', 'scale-95');
-          setTimeout(() => { if (!isPlayerInLobby && distToElevator >= 2.6) hudPanel.classList.add('hidden'); }, 200);
+          setTimeout(() => {
+            const stillNear = (isPlayerInLobby || isPlayerInside || (distToElevatorXZ < 2.6 && Math.abs(player.root.position.y - this.currentY) < 1.5));
+            if (!stillNear) hudPanel.classList.add('hidden');
+          }, 200);
         }
       }
 
       // 2. Smooth Sliding Doors Animation (Open / Close along Z-axis)
-      const doorSpeed = dt * 5.0;
+      const doorSpeed = dt * 6.5;
       this.doorOpenAmount += (this.doorTarget - this.doorOpenAmount) * Math.min(1.0, doorSpeed);
+      if (this.doorOpenAmount < 0.01) this.doorOpenAmount = 0.0;
+      if (this.doorOpenAmount > 0.99) this.doorOpenAmount = 1.0;
 
       const maxSlide = 0.65;
       this.cabDoorL.position.z = -0.38 - this.doorOpenAmount * maxSlide;
@@ -2980,42 +3013,44 @@
       if (this.isMoving) {
         if (this.doorOpenAmount < 0.1) {
           const dy = this.targetY - this.currentY;
-          const step = Math.sign(dy) * Math.min(Math.abs(dy), this.speed * dt);
-          this.currentY += step;
-          this.cabinGroup.position.y = this.currentY;
+          const distY = Math.abs(dy);
+          if (distY > 0.02) {
+            const step = Math.sign(dy) * Math.min(distY, this.speed * dt);
+            this.currentY += step;
+            this.cabinGroup.position.y = this.currentY;
 
-          // Bawa pemain secara mulus di dalam lift
-          if (isPlayerInside) {
-            player.root.position.y = this.currentY;
-          }
-
-          // Bawa seluruh NPC penumpang lift secara mulus
-          customers.forEach(c => {
-            if (c.state === 'riding_lift' || c.state === 'riding_lift_exit') {
-              c.mesh.root.position.y = this.currentY;
+            // Bawa pemain secara mulus di dalam lift
+            if (isPlayerInside) {
+              player.root.position.y = this.currentY;
             }
-          });
 
-          // Cek ketibaan di lantai tujuan
-          if (Math.abs(this.currentY - this.targetY) < 0.02) {
+            // Bawa seluruh NPC penumpang lift secara mulus
+            customers.forEach(c => {
+              if (c.mesh && c.mesh.root && (c.state === 'riding_lift' || c.state === 'riding_lift_exit')) {
+                c.mesh.root.position.y = this.currentY;
+              }
+            });
+          } else {
+            // Tiba di lantai tujuan!
             this.currentY = this.targetY;
             this.cabinGroup.position.y = this.currentY;
             this.currentFloor = this.targetFloor;
             this.isMoving = false;
             this.doorTarget = 1.0; // PINTU OTOMATIS MEMBUKA KEMBALI SETELAH TIBA DI LANTAI TUJUAN!
+            this.doorHoldTimer = 3.5;
 
             if (isPlayerInside) {
               player.root.position.y = this.currentY;
             }
 
             customers.forEach(c => {
-              if (c.state === 'riding_lift' || c.state === 'riding_lift_exit') {
+              if (c.mesh && c.mesh.root && (c.state === 'riding_lift' || c.state === 'riding_lift_exit')) {
                 c.mesh.root.position.y = this.currentY;
               }
             });
 
             if (audio && audio.playDing) audio.playDing();
-            showLocationToast(ELEVATOR_CONFIG.floors[this.currentFloor].icon, `Tiba di ${ELEVATOR_CONFIG.floors[this.currentFloor].name}!`);
+            showLocationToast(ELEVATOR_CONFIG.floors[this.currentFloor].icon, 'Tiba di ' + ELEVATOR_CONFIG.floors[this.currentFloor].name + '!');
           }
         }
       }
@@ -6400,13 +6435,28 @@
     if (e.code === 'KeyE') handleActionTrigger();
     if (e.code === 'KeyF') performPlayerPunch();
     if (e.code === 'Digit1' || e.code === 'Numpad1') {
-      if (typeof ElevatorSystem !== 'undefined') ElevatorSystem.goToFloor(1);
+      if (typeof ElevatorSystem !== 'undefined' && typeof ELEVATOR_CONFIG !== 'undefined') {
+        const px = player.root.position.x, py = player.root.position.y, pz = player.root.position.z;
+        if (Math.hypot(px - ELEVATOR_CONFIG.posX, pz - ELEVATOR_CONFIG.posZ) < 3.5 && Math.abs(py - ElevatorSystem.currentY) < 1.5) {
+          ElevatorSystem.goToFloor(1);
+        }
+      }
     }
     if (e.code === 'Digit2' || e.code === 'Numpad2') {
-      if (typeof ElevatorSystem !== 'undefined') ElevatorSystem.goToFloor(2);
+      if (typeof ElevatorSystem !== 'undefined' && typeof ELEVATOR_CONFIG !== 'undefined') {
+        const px = player.root.position.x, py = player.root.position.y, pz = player.root.position.z;
+        if (Math.hypot(px - ELEVATOR_CONFIG.posX, pz - ELEVATOR_CONFIG.posZ) < 3.5 && Math.abs(py - ElevatorSystem.currentY) < 1.5) {
+          ElevatorSystem.goToFloor(2);
+        }
+      }
     }
     if (e.code === 'Digit3' || e.code === 'Numpad3') {
-      if (typeof ElevatorSystem !== 'undefined') ElevatorSystem.goToFloor(3);
+      if (typeof ElevatorSystem !== 'undefined' && typeof ELEVATOR_CONFIG !== 'undefined') {
+        const px = player.root.position.x, py = player.root.position.y, pz = player.root.position.z;
+        if (Math.hypot(px - ELEVATOR_CONFIG.posX, pz - ELEVATOR_CONFIG.posZ) < 3.5 && Math.abs(py - ElevatorSystem.currentY) < 1.5) {
+          ElevatorSystem.goToFloor(3);
+        }
+      }
     }
 
   });
@@ -7742,7 +7792,7 @@
         ElevatorSystem.callElevatorToFloor(1);
 
         // Jika lift sudah berada di lantai 1 dan pintunya sudah terbuka lebar
-        if (ElevatorSystem.currentFloor === 1 && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.75) {
+        if (ElevatorSystem.currentFloor === 1 && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.4) {
           cust.state = 'enter_lift';
         }
       }
@@ -7784,7 +7834,7 @@
         cust.mesh.legR.rotation.x = 0;
 
         // Cek apakah lift sudah tiba di lantai meja dan pintu sudah terbuka
-        if (ElevatorSystem.currentFloor === cust.table.floor && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.75) {
+        if (ElevatorSystem.currentFloor === cust.table.floor && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.4) {
           cust.state = 'exit_lift';
         }
       }
@@ -8060,7 +8110,7 @@
       else if (cust.state === 'wait_lift_exit') {
         ElevatorSystem.callElevatorToFloor(cust.table.floor);
 
-        if (ElevatorSystem.currentFloor === cust.table.floor && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.75) {
+        if (ElevatorSystem.currentFloor === cust.table.floor && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.4) {
           cust.state = 'enter_lift_exit';
         }
       }
@@ -8090,7 +8140,7 @@
       else if (cust.state === 'riding_lift_exit') {
         curPos.y = ElevatorSystem.currentY;
 
-        if (ElevatorSystem.currentFloor === 1 && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.75) {
+        if (ElevatorSystem.currentFloor === 1 && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.4) {
           cust.state = 'exit_lift_exit';
         }
       }
