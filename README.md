@@ -1,4 +1,4 @@
-﻿<div align=" center\>
+<div align=" center\>
 
 # ☕ Kafe 3D — Open-World Coffee Tycoon Simulation
 
@@ -18,9 +18,9 @@
 
 ### 📸 Galeri Tampilan Game (Gameplay Showcase)
 
-| 🌿 Eksplorasi Desa & Pasar Terbuka (Sore Hari) | 🌙 Suasana Interior Kafe & Barista Sarah (Malam Hari) |
-| :---: | :---: |
-| ![Kafe 3D Open-World Village](assets/gameplay_preview.png) | ![Kafe 3D Cozy Interior Night](assets/cafe_interior_night.png) |
+| 🌿 Eksplorasi Desa & Pasar (Outdoor) | 🍽️ Interaksi Pelanggan & Pelayan Andi (Serving) | 🌙 Suasana Interior Kafe (Night View) |
+| :---: | :---: | :---: |
+| ![Kafe 3D Open-World Village](assets/gameplay_preview.png) | ![Kafe 3D Pelanggan & Pelayan](assets/customer_dining_serving.png) | ![Kafe 3D Cozy Interior Night](assets/cafe_interior_night.png) |
 
 </div>
 
@@ -127,15 +127,16 @@ Buka browser di: **http://localhost:8000**
 
 ## 📁 Struktur Direktori (Project Structure)
 
-`ash
+` ash
 Kafe-3D/
 ├── 📁 app/
 │ └── GameEngine.php # Logika kalkulasi ekonomi simulasi bisnis (Flight PHP)
 ├── 📁 assets/
-│ ├── gameplay_preview.png # Screenshot suasana desa & pasar luar
-│ ├── cafe_interior_night.png # Screenshot interior kafe & barista malam hari
-│ ├── sarah_vrm.glb # 3D VRM Model Barista Sarah
-│ └── michelle.glb # 3D Model Pelayan
+│   ├── gameplay_preview.png        # Screenshot suasana desa & pasar luar
+│   ├── cafe_interior_night.png     # Screenshot interior kafe & barista malam hari
+│   ├── customer_dining_serving.png # Screenshot aktivitas pelanggan & pelayan menyajikan pesanan
+│   ├── sarah_vrm.glb               # 3D VRM Model Barista Sarah
+│   └── michelle.glb                # 3D Model Pelayan
 ├── 📁 libs/
 │ ├── three.min.js # Three.js 3D Engine Library
 │ ├── OrbitControls.js # Modul kontrol kamera orbit 3D
