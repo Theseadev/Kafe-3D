@@ -1604,15 +1604,16 @@
   baseR.receiveShadow = true;
   scene.add(baseL, baseR);
 
-  // B. Upper Fascia Wall (y: 4.2 to 6.2)
-  const upperWallL = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.0, 0.25), Mat.wallWarmCream);
-  upperWallL.position.set(-5.4, 5.2, facadeZ);
+  // B. Upper Fascia Wall (y: 4.2 to 5.5 - Stops flush under Lantai 2 floor slab)
+  const upperWallL = new THREE.Mesh(new THREE.BoxGeometry(7.2, 1.35, 0.25), Mat.wallWarmCream);
+  upperWallL.position.set(-5.4, 4.875, facadeZ);
   upperWallL.castShadow = true;
-  const upperWallR = new THREE.Mesh(new THREE.BoxGeometry(7.2, 2.0, 0.25), Mat.wallWarmCream);
-  upperWallR.position.set(5.4, 5.2, facadeZ);
+  const upperWallR = new THREE.Mesh(new THREE.BoxGeometry(7.2, 1.35, 0.25), Mat.wallWarmCream);
+  upperWallR.position.set(5.4, 4.875, facadeZ);
   upperWallR.castShadow = true;
-  const upperDoorHeader = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.6, 0.25), Mat.wallWarmCream);
-  upperDoorHeader.position.set(0, 4.9, facadeZ);
+  // Door header on Ground Floor only goes up to Y = 5.5 so Lantai 2 Balcony Doorway is 100% CLEAR of walls!
+  const upperDoorHeader = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.9, 0.25), Mat.wallWarmCream);
+  upperDoorHeader.position.set(0, 4.55, facadeZ);
   upperDoorHeader.castShadow = true;
   scene.add(upperWallL, upperWallR, upperDoorHeader);
 
