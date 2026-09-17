@@ -16,8 +16,11 @@
 
 ---
 
-### 🎮 Gameplay Preview
-![Kafe 3D Open-World Gameplay](assets/gameplay_preview.png)
+### 📸 Galeri Tampilan Game (Gameplay Showcase)
+
+| 🌿 Eksplorasi Desa & Pasar Terbuka (Sore Hari) | 🌙 Suasana Interior Kafe & Barista Sarah (Malam Hari) |
+| :---: | :---: |
+| ![Kafe 3D Open-World Village](assets/gameplay_preview.png) | ![Kafe 3D Cozy Interior Night](assets/cafe_interior_night.png) |
 
 </div>
 
@@ -129,7 +132,8 @@ Kafe-3D/
 ├── 📁 app/
 │ └── GameEngine.php # Logika kalkulasi ekonomi simulasi bisnis (Flight PHP)
 ├── 📁 assets/
-│ ├── gameplay_preview.png # Cuplikan screenshot gameplay Kafe 3D
+│ ├── gameplay_preview.png # Screenshot suasana desa & pasar luar
+│ ├── cafe_interior_night.png # Screenshot interior kafe & barista malam hari
 │ ├── sarah_vrm.glb # 3D VRM Model Barista Sarah
 │ └── michelle.glb # 3D Model Pelayan
 ├── 📁 libs/
