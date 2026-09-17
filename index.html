@@ -5650,12 +5650,15 @@
       controls.enabled = true;
       cameraModeText.innerText = 'Kamera: Orbit 3D';
       povCrosshair.style.display = 'none';
+      player.root.visible = true;
       player.head.visible = true;
       document.body.classList.remove('cursor-crosshair');
     } else if (mode === 'pov') {
       controls.enabled = false;
       cameraModeText.innerText = 'Kamera: POV Mata (FPV)';
       povCrosshair.style.display = 'block';
+      // Sembunyikan seluruh tubuh karakter pemain di FPV agar tidak terlihat saat menunduk/melihat ke bawah
+      player.root.visible = false;
       player.head.visible = false;
       GAME_STATE.cameraYaw = player.root.rotation.y;
       GAME_STATE.cameraPitch = 0;
@@ -5664,6 +5667,7 @@
       controls.enabled = false;
       cameraModeText.innerText = 'Kamera: 3rd Person';
       povCrosshair.style.display = 'none';
+      player.root.visible = true;
       player.head.visible = true;
       document.body.classList.remove('cursor-crosshair');
     }
@@ -6542,6 +6546,8 @@
     const py = player.root.position.y;
     const pz = player.root.position.z;
     const yaw = player.root.rotation.y;
+
+    player.root.visible = (GAME_STATE.cameraMode !== 'pov');
 
     if (GAME_STATE.cameraMode === 'pov') {
       const eyeY = py + 1.48;
