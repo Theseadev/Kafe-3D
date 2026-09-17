@@ -1528,14 +1528,52 @@
     scene.add(hMullion);
   });
 
-  // 3. RIGHT WALL (X = +floorSizeX / 2 = +9.0)
-  const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.2, wallH, floorSizeZ), Mat.wallWarmCream);
-  rightWall.position.set(floorSizeX / 2, wallH / 2, 0);
-  rightWall.receiveShadow = true;
-  scene.add(rightWall);
+  // 3. RIGHT WALL WITH GRAND ELEVATOR PORTAL (X = +floorSizeX / 2 = +9.0)
+  // Back Wall Segment (Z: -8.0 to -5.0)
+  const rightWallBack = new THREE.Mesh(new THREE.BoxGeometry(0.22, wallH, 3.0), Mat.wallWarmCream);
+  rightWallBack.position.set(floorSizeX / 2, wallH / 2, -6.5);
+  rightWallBack.receiveShadow = true;
+  scene.add(rightWallBack);
 
+  // Front Wall Segment (Z: -2.0 to +8.0)
+  const rightWallFront = new THREE.Mesh(new THREE.BoxGeometry(0.22, wallH, 10.0), Mat.wallWarmCream);
+  rightWallFront.position.set(floorSizeX / 2, wallH / 2, 3.0);
+  rightWallFront.receiveShadow = true;
+  scene.add(rightWallFront);
+
+  // Top Arch Header above Portal (Z: -5.0 to -2.0, Y: 3.8 to 5.6)
+  const rightWallPortalTop = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.8, 3.0), Mat.wallWarmCream);
+  rightWallPortalTop.position.set(floorSizeX / 2, 4.7, -3.5);
+  scene.add(rightWallPortalTop);
+
+  // Grand Golden Portal to Right Wing Glass Elevator (Floor 1 Entrance)
+  const archL1PostL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 3.8, 0.14), Mat.brassGold);
+  archL1PostL.position.set(floorSizeX / 2 - 0.05, 1.9, -5.0);
+  const archL1PostR = new THREE.Mesh(new THREE.BoxGeometry(0.28, 3.8, 0.14), Mat.brassGold);
+  archL1PostR.position.set(floorSizeX / 2 - 0.05, 1.9, -2.0);
+  const archL1Header = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 3.14), Mat.brassGold);
+  archL1Header.position.set(floorSizeX / 2 - 0.05, 3.75, -3.5);
+
+  const archL1Sign = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 2.2), Mat.blackMetal);
+  archL1Sign.position.set(floorSizeX / 2 - 0.12, 4.05, -3.5);
+  const archL1Neon = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.35, 2.0), Mat.ledNeonGold);
+  archL1Neon.position.set(floorSizeX / 2 - 0.17, 4.05, -3.5);
+
+  // Decorative Planters at Entrance
+  const pL1PotL = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.75, 16), Mat.brassGold);
+  pL1PotL.position.set(floorSizeX / 2 - 0.35, 0.38, -5.25);
+  const pL1PlantL = new THREE.Mesh(new THREE.DodecahedronGeometry(0.38, 1), Mat.leafOakVolume);
+  pL1PlantL.position.set(floorSizeX / 2 - 0.35, 1.15, -5.25);
+  const pL1PotR = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.75, 16), Mat.brassGold);
+  pL1PotR.position.set(floorSizeX / 2 - 0.35, 0.38, -1.75);
+  const pL1PlantR = new THREE.Mesh(new THREE.DodecahedronGeometry(0.38, 1), Mat.leafOakVolume);
+  pL1PlantR.position.set(floorSizeX / 2 - 0.35, 1.15, -1.75);
+
+  scene.add(archL1PostL, archL1PostR, archL1Header, archL1Sign, archL1Neon, pL1PotL, pL1PlantL, pL1PotR, pL1PlantR);
+
+  // Gallery Posters on Front Segment
   const posterColors = [0x92400e, 0x166534, 0x831843];
-  [-4, 0, 4].forEach((pz, pIdx) => {
+  [0.5, 4.5].forEach((pz, pIdx) => {
     const frame = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.8, 1.3), Mat.darkWalnut);
     frame.position.set(floorSizeX / 2 - 0.08, 3.4, pz);
     scene.add(frame);
@@ -2287,16 +2325,43 @@
     cafeLevel2Group.add(frame, canvas);
   });
 
-  // 7. Lantai 2 Left & Right Glass Walls (X = ±9.0, Y: 5.6 to 11.2)
-  [-floorSizeX / 2, floorSizeX / 2].forEach(wx => {
-    const sideGlass = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.8, floorSizeZ), Mat.clearGlass);
-    sideGlass.position.set(wx, 8.3, 0);
-    const sideBase = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.6, floorSizeZ), Mat.darkWalnut);
-    sideBase.position.set(wx, 5.9, 0);
-    const sideTop = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.8, floorSizeZ), Mat.darkWalnut);
-    sideTop.position.set(wx, 10.8, 0);
-    cafeLevel2Group.add(sideGlass, sideBase, sideTop);
-  });
+  // 7. Lantai 2 Left Glass Wall (X = -9.0)
+  const leftGlassL2 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.8, floorSizeZ), Mat.clearGlass);
+  leftGlassL2.position.set(-floorSizeX / 2, 8.3, 0);
+  const leftBaseL2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.6, floorSizeZ), Mat.darkWalnut);
+  leftBaseL2.position.set(-floorSizeX / 2, 5.9, 0);
+  const leftTopL2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.8, floorSizeZ), Mat.darkWalnut);
+  leftTopL2.position.set(-floorSizeX / 2, 10.8, 0);
+  cafeLevel2Group.add(leftGlassL2, leftBaseL2, leftTopL2);
+
+  // Lantai 2 Right Wall with Open Portal to Panoramic Glass Lift (X = +9.0)
+  // Back Glass Segment (Z: -8.0 to -5.0)
+  const rightGlassBackL2 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.8, 3.0), Mat.clearGlass);
+  rightGlassBackL2.position.set(floorSizeX / 2, 8.3, -6.5);
+  const rightBaseBackL2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.6, 3.0), Mat.darkWalnut);
+  rightBaseBackL2.position.set(floorSizeX / 2, 5.9, -6.5);
+  // Front Glass Segment (Z: -2.0 to +8.0)
+  const rightGlassFrontL2 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.8, 10.0), Mat.clearGlass);
+  rightGlassFrontL2.position.set(floorSizeX / 2, 8.3, 3.0);
+  const rightBaseFrontL2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.6, 10.0), Mat.darkWalnut);
+  rightBaseFrontL2.position.set(floorSizeX / 2, 5.9, 3.0);
+  const rightTopL2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.8, floorSizeZ), Mat.darkWalnut);
+  rightTopL2.position.set(floorSizeX / 2, 10.8, 0);
+
+  // Grand Golden Portal on Floor 2 Entrance to Elevator
+  const archL2PostL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 3.8, 0.14), Mat.brassGold);
+  archL2PostL.position.set(floorSizeX / 2 - 0.05, 5.6 + 1.9, -5.0);
+  const archL2PostR = new THREE.Mesh(new THREE.BoxGeometry(0.28, 3.8, 0.14), Mat.brassGold);
+  archL2PostR.position.set(floorSizeX / 2 - 0.05, 5.6 + 1.9, -2.0);
+  const archL2Header = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 3.14), Mat.brassGold);
+  archL2Header.position.set(floorSizeX / 2 - 0.05, 5.6 + 3.75, -3.5);
+
+  const archL2Sign = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 2.2), Mat.blackMetal);
+  archL2Sign.position.set(floorSizeX / 2 - 0.12, 5.6 + 4.05, -3.5);
+  const archL2Neon = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.35, 2.0), Mat.ledNeonCyan);
+  archL2Neon.position.set(floorSizeX / 2 - 0.17, 5.6 + 4.05, -3.5);
+
+  cafeLevel2Group.add(rightGlassBackL2, rightBaseBackL2, rightGlassFrontL2, rightBaseFrontL2, rightTopL2, archL2PostL, archL2PostR, archL2Header, archL2Sign, archL2Neon);
 
   // 8. Lantai 2 Ceiling Plank & Walnut Beams (Y = 11.2)
   const ceilingL2 = new THREE.Mesh(new THREE.BoxGeometry(floorSizeX, 0.15, floorSizeZ), Mat.wallWarmCream);
@@ -2440,14 +2505,40 @@
     rooftopGroup.add(glass, handrail);
   });
 
-  // Left & Right Glass Railings
-  [-floorSizeX / 2 + 0.15, floorSizeX / 2 - 0.15].forEach(rx => {
-    const glass = new THREE.Mesh(new THREE.BoxGeometry(0.08, railH, floorSizeZ - 0.4), Mat.glassRailing);
-    glass.position.set(rx, railY, 0);
-    const handrail = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, floorSizeZ), Mat.brassGold);
-    handrail.position.set(rx, 11.2 + railH, 0);
-    rooftopGroup.add(glass, handrail);
-  });
+  // Left Glass Railing (X = -8.85)
+  const leftGlassRail = new THREE.Mesh(new THREE.BoxGeometry(0.08, railH, floorSizeZ - 0.4), Mat.glassRailing);
+  leftGlassRail.position.set(-floorSizeX / 2 + 0.15, railY, 0);
+  const leftHandrail = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, floorSizeZ), Mat.brassGold);
+  leftHandrail.position.set(-floorSizeX / 2 + 0.15, 11.2 + railH, 0);
+  rooftopGroup.add(leftGlassRail, leftHandrail);
+
+  // Right Railings with Open Gateway to Elevator Pavilion (X = +8.85)
+  // Back Segment (Z: -8.0 to -5.0)
+  const rightGlassRailBack = new THREE.Mesh(new THREE.BoxGeometry(0.08, railH, 3.0), Mat.glassRailing);
+  rightGlassRailBack.position.set(floorSizeX / 2 - 0.15, railY, -6.5);
+  const rightHandrailBack = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, 3.0), Mat.brassGold);
+  rightHandrailBack.position.set(floorSizeX / 2 - 0.15, 11.2 + railH, -6.5);
+
+  // Front Segment (Z: -2.0 to +8.0)
+  const rightGlassRailFront = new THREE.Mesh(new THREE.BoxGeometry(0.08, railH, 10.0), Mat.glassRailing);
+  rightGlassRailFront.position.set(floorSizeX / 2 - 0.15, railY, 3.0);
+  const rightHandrailFront = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, 10.0), Mat.brassGold);
+  rightHandrailFront.position.set(floorSizeX / 2 - 0.15, 11.2 + railH, 3.0);
+
+  // Grand Golden Gateway Portal on Rooftop
+  const rfArchPostL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 3.2, 0.14), Mat.brassGold);
+  rfArchPostL.position.set(floorSizeX / 2 - 0.05, 11.2 + 1.6, -5.0);
+  const rfArchPostR = new THREE.Mesh(new THREE.BoxGeometry(0.24, 3.2, 0.14), Mat.brassGold);
+  rfArchPostR.position.set(floorSizeX / 2 - 0.05, 11.2 + 1.6, -2.0);
+  const rfArchHeader = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 3.14), Mat.brassGold);
+  rfArchHeader.position.set(floorSizeX / 2 - 0.05, 11.2 + 3.15, -3.5);
+
+  const rfSign = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 2.2), Mat.blackMetal);
+  rfSign.position.set(floorSizeX / 2 - 0.12, 11.2 + 3.45, -3.5);
+  const rfSignNeon = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.35, 2.0), Mat.ledNeonGold);
+  rfSignNeon.position.set(floorSizeX / 2 - 0.17, 11.2 + 3.45, -3.5);
+
+  rooftopGroup.add(rightGlassRailBack, rightHandrailBack, rightGlassRailFront, rightHandrailFront, rfArchPostL, rfArchPostR, rfArchHeader, rfSign, rfSignNeon);
 
   // 4 Corner Wooden Pillars for String Lights
   const cornerPillarCoords = [
@@ -2585,13 +2676,14 @@
 
   
     // --------------------------------------------------------------------------
-  // C. RUANGAN KHUSUS LIFT KAFE (DEDICATED ELEVATOR LOBBY & ULTRA-LUXURY LIFT)
+  // C. SAYAP KANAN MENARA LIFT KACA OBSERVATORIUM 3-TINGKAT (PANORAMIC GLASS TOWER WING)
+  // Menara kaca arsitektur modern di pojok kanan luar kafe (X: 9.0 to 12.2, Z: -5.2 to -1.8)
   // --------------------------------------------------------------------------
   const ELEVATOR_CONFIG = {
-    posX: 7.2,
-    posZ: -5.8,
-    width: 2.2,
-    depth: 2.2,
+    posX: 10.6,
+    posZ: -3.5,
+    width: 2.1,
+    depth: 2.1,
     floors: {
       1: { name: 'Lantai 1: Kafe Utama & Dapur', y: 0.05, icon: '🏢' },
       2: { name: 'Lantai 2: Lounge & Balkon Outdoor', y: 5.6, icon: '🛋️' },
@@ -2601,182 +2693,138 @@
 
   const dedicatedElevatorRoomGroup = new THREE.Group();
 
-    // --------------------------------------------------------------------------
-  // 1. DINDING RUANGAN KHUSUS LIFT LANTAI 1 (Ground Floor Lobby: X: 5.4 to 9.0, Z: -8.0 to -3.6)
-  // --------------------------------------------------------------------------
-  // Dinding Pemisah Kiri (Memisahkan Dapur dengan Ruangan Lift)
-  const roomWallL1Left = new THREE.Mesh(new THREE.BoxGeometry(0.2, 5.6, 4.4), Mat.darkWalnut);
-  roomWallL1Left.position.set(5.4, 2.8, -5.8);
-  roomWallL1Left.receiveShadow = true;
-  dedicatedElevatorRoomGroup.add(roomWallL1Left);
+  // 1. PONDASI & LANTAI MARMER EKSTENSI SAYAP KANAN DI SETIAP LANTAI (Y = 0.05, 5.6, 11.2)
+  const towerPlinth = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.4, 3.6), Mat.porchStone);
+  towerPlinth.position.set(10.6, 0.2, -3.5);
+  towerPlinth.receiveShadow = true;
+  dedicatedElevatorRoomGroup.add(towerPlinth);
 
-  // Dinding Depan Ruangan Lift dengan Pintu Gerbang Archway Terbuka (Z = -3.6)
-  const roomWallL1FrontL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.6, 0.2), Mat.darkWalnut);
-  roomWallL1FrontL.position.set(5.8, 2.8, -3.6);
-  const roomWallL1FrontR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.6, 0.2), Mat.darkWalnut);
-  roomWallL1FrontR.position.set(8.6, 2.8, -3.6);
-  const roomWallL1FrontTop = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.1, 0.2), Mat.darkWalnut);
-  roomWallL1FrontTop.position.set(7.2, 4.55, -3.6);
+  [0.05, 5.6, 11.2].forEach((fy) => {
+    const landingDeck = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.12, 3.4), Mat.marbleTop);
+    landingDeck.position.set(10.6, fy + 0.06, -3.5);
+    landingDeck.receiveShadow = true;
+    const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(3.26, 0.04, 3.46), Mat.brassGold);
+    goldTrim.position.set(10.6, fy + 0.12, -3.5);
+    dedicatedElevatorRoomGroup.add(landingDeck, goldTrim);
+  });
 
-  // Pintu Gerbang Archway Kuningan Emas Terbuka (Hollow Frame) Menuju Ruangan Lift
-  const archL1PostL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.5, 0.24), Mat.brassGold);
-  archL1PostL.position.set(6.25, 1.75, -3.6);
-  const archL1PostR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.5, 0.24), Mat.brassGold);
-  archL1PostR.position.set(8.15, 1.75, -3.6);
-  const archL1Header = new THREE.Mesh(new THREE.BoxGeometry(2.02, 0.2, 0.24), Mat.brassGold);
-  archL1Header.position.set(7.2, 3.45, -3.6);
+  // 2. STRUKTUR UTAMA MENARA KACA 15 METER DENGAN 4 KOLOM BAJA & NEON CYAN
+  const towerH = 15.0;
+  const colCoords = [
+    [9.0, -5.2],
+    [12.2, -5.2],
+    [12.2, -1.8],
+    [9.0, -1.8]
+  ];
 
-  const archL1Sign = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.08), Mat.blackMetal);
-  archL1Sign.position.set(7.2, 3.75, -3.45);
-  const archL1Neon = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.35, 0.02), Mat.ledNeonGold);
-  archL1Neon.position.set(7.2, 3.75, -3.4);
+  colCoords.forEach(([cx, cz]) => {
+    const col = new THREE.Mesh(new THREE.BoxGeometry(0.24, towerH, 0.24), Mat.elevatorShaftFrame);
+    col.position.set(cx, towerH / 2, cz);
+    const neonStrip = new THREE.Mesh(new THREE.BoxGeometry(0.04, towerH - 0.4, 0.04), Mat.ledNeonCyan);
+    neonStrip.position.set(cx + (cx > 10.6 ? 0.08 : -0.08), towerH / 2, cz + (cz > -3.5 ? 0.08 : -0.08));
+    dedicatedElevatorRoomGroup.add(col, neonStrip);
+  });
 
-  // Lantai Marmer Putih Khusus di Dalam Ruangan Lift Lt 1
-  const lobbyFloorL1 = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.04, 4.4), Mat.marbleTop);
-  lobbyFloorL1.position.set(7.2, 0.02, -5.8);
-  lobbyFloorL1.receiveShadow = true;
+  // 3. DINDING KACA PANORAMIK 3 SISI (TIMUR, UTARA, SELATAN) MENGHADAP ALAM DESA LUAR
+  // East Glass Curtain Wall (X = 12.2, Z: -5.2 to -1.8)
+  const towerEastGlass = new THREE.Mesh(new THREE.BoxGeometry(0.08, towerH, 3.4), Mat.elevatorGlass);
+  towerEastGlass.position.set(12.2, towerH / 2, -3.5);
+  // North Glass Curtain Wall (Z = -5.2, X: 9.0 to 12.2)
+  const towerNorthGlass = new THREE.Mesh(new THREE.BoxGeometry(3.2, towerH, 0.08), Mat.elevatorGlass);
+  towerNorthGlass.position.set(10.6, towerH / 2, -5.2);
+  // South Glass Curtain Wall (Z = -1.8, X: 9.0 to 12.2)
+  const towerSouthGlass = new THREE.Mesh(new THREE.BoxGeometry(3.2, towerH, 0.08), Mat.elevatorGlass);
+  towerSouthGlass.position.set(10.6, towerH / 2, -1.8);
+  dedicatedElevatorRoomGroup.add(towerEastGlass, towerNorthGlass, towerSouthGlass);
 
-  // Lampu Dinding Sconce & Tanaman Pot di Depan Pintu Masuk Ruangan Lift
-  const lobbyPlant = new THREE.Mesh(new THREE.DodecahedronGeometry(0.35, 1), Mat.leafOakVolume);
-  lobbyPlant.position.set(5.9, 1.1, -3.3);
-  const lobbyPot = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.16, 0.7, 16), Mat.brassGold);
-  lobbyPot.position.set(5.9, 0.35, -3.3);
+  // Horizontal Architectural Gold Mullions & Ring Beams across 3 floors
+  [2.8, 5.6, 8.4, 11.2, 14.0].forEach(my => {
+    const beamE = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.18, 3.4), Mat.brassGold);
+    beamE.position.set(12.2, my, -3.5);
+    const beamN = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.18, 0.16), Mat.brassGold);
+    beamN.position.set(10.6, my, -5.2);
+    const beamS = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.18, 0.16), Mat.brassGold);
+    beamS.position.set(10.6, my, -1.8);
+    dedicatedElevatorRoomGroup.add(beamE, beamN, beamS);
+  });
 
-  dedicatedElevatorRoomGroup.add(roomWallL1FrontL, roomWallL1FrontR, roomWallL1FrontTop, archL1PostL, archL1PostR, archL1Header, archL1Sign, archL1Neon, lobbyFloorL1, lobbyPlant, lobbyPot);
+  // 4. MAHKOTA ATAP MODERN KANOPI SAYAP MENARA LIFT (Y = 15.0)
+  const towerRoofSlab = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.35, 4.0), Mat.darkWalnut);
+  towerRoofSlab.position.set(10.6, 15.0, -3.5);
+  const towerRoofTrim = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.12, 4.2), Mat.brassGold);
+  towerRoofTrim.position.set(10.6, 15.18, -3.5);
+  const towerSpire = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.12, 1.4, 12), Mat.brassGold);
+  towerSpire.position.set(10.6, 15.85, -3.5);
+  const towerBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), Mat.ledNeonCyan);
+  towerBeacon.position.set(10.6, 16.55, -3.5);
 
-  // --------------------------------------------------------------------------
-  // 2. DINDING RUANGAN KHUSUS LIFT LANTAI 2 (Executive Lounge Lobby: Y = 5.6 to 11.2)
-  // --------------------------------------------------------------------------
-  const roomWallL2Left = new THREE.Mesh(new THREE.BoxGeometry(0.2, 5.6, 4.4), Mat.darkWalnut);
-  roomWallL2Left.position.set(5.4, 8.4, -5.8);
-  const roomWallL2FrontL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.6, 0.2), Mat.darkWalnut);
-  roomWallL2FrontL.position.set(5.8, 8.4, -3.6);
-  const roomWallL2FrontR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 5.6, 0.2), Mat.darkWalnut);
-  roomWallL2FrontR.position.set(8.6, 8.4, -3.6);
-  const roomWallL2FrontTop = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.1, 0.2), Mat.darkWalnut);
-  roomWallL2FrontTop.position.set(7.2, 10.15, -3.6);
+  const towerSpotLight = new THREE.PointLight(0xfffae0, 1.6, 12, 1.4);
+  towerSpotLight.position.set(10.6, 14.7, -3.5);
 
-  const archL2PostL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.5, 0.24), Mat.brassGold);
-  archL2PostL.position.set(6.25, 7.35, -3.6);
-  const archL2PostR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.5, 0.24), Mat.brassGold);
-  archL2PostR.position.set(8.15, 7.35, -3.6);
-  const archL2Header = new THREE.Mesh(new THREE.BoxGeometry(2.02, 0.2, 0.24), Mat.brassGold);
-  archL2Header.position.set(7.2, 9.05, -3.6);
+  dedicatedElevatorRoomGroup.add(towerRoofSlab, towerRoofTrim, towerSpire, towerBeacon, towerSpotLight);
 
-  const archL2Sign = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.08), Mat.blackMetal);
-  archL2Sign.position.set(7.2, 9.35, -3.45);
-  const archL2Neon = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.35, 0.02), Mat.ledNeonCyan);
-  archL2Neon.position.set(7.2, 9.35, -3.4);
-
-  const lobbyFloorL2 = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.04, 4.4), Mat.marbleTop);
-  lobbyFloorL2.position.set(7.2, 5.62, -5.8);
-
-  dedicatedElevatorRoomGroup.add(roomWallL2Left, roomWallL2FrontL, roomWallL2FrontR, roomWallL2FrontTop, archL2PostL, archL2PostR, archL2Header, archL2Sign, archL2Neon, lobbyFloorL2);
-
-  // --------------------------------------------------------------------------
-  // 3. PAVILIUN / GAZEBO RUANGAN LIFT ROOFTOP (Rooftop Elevator Foyer: Y = 11.2 to 14.6)
-  // --------------------------------------------------------------------------
-  const rooftopFoyerGroup = new THREE.Group();
-  rooftopFoyerGroup.position.set(7.2, 11.2, -5.8);
-
-  const rfWallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.4, 4.4), Mat.darkWalnut);
-  rfWallLeft.position.set(-1.8, 1.7, 0);
-  const rfWallBack = new THREE.Mesh(new THREE.BoxGeometry(3.6, 3.4, 0.18), Mat.darkWalnut);
-  rfWallBack.position.set(0, 1.7, -2.2);
-  const rfWallRight = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.4, 4.4), Mat.clearGlass);
-  rfWallRight.position.set(1.8, 1.7, 0);
-
-  // Foyer Doorway to Rooftop Terrace (Hollow Frame)
-  const rfArchPostL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.3, 0.22), Mat.brassGold);
-  rfArchPostL.position.set(-0.95, 1.65, 2.2);
-  const rfArchPostR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.3, 0.22), Mat.brassGold);
-  rfArchPostR.position.set(0.95, 1.65, 2.2);
-  const rfArchHeader = new THREE.Mesh(new THREE.BoxGeometry(2.02, 0.2, 0.22), Mat.brassGold);
-  rfArchHeader.position.set(0, 3.2, 2.2);
-
-  const rfSign = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.06), Mat.blackMetal);
-  rfSign.position.set(0, 3.1, 2.32);
-  const rfSignNeon = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.35, 0.02), Mat.ledNeonGold);
-  rfSignNeon.position.set(0, 3.1, 2.36);
-
-  const rfRoof = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.35, 4.8), Mat.cottageRoofRedTile);
-  rfRoof.position.set(0, 3.55, 0);
-
-  rooftopFoyerGroup.add(rfWallLeft, rfWallBack, rfWallRight, rfArchPostL, rfArchPostR, rfArchHeader, rfSign, rfSignNeon, rfRoof);
-  dedicatedElevatorRoomGroup.add(rooftopFoyerGroup);
-
-  // --------------------------------------------------------------------------
-  // 4. POROS LIFT BAJA & KACA DI DALAM RUANGAN (ENCLOSED SHAFT)
-  // --------------------------------------------------------------------------
+  // 5. POROS LIFT BAJA & PINTU GESER OTOMATIS LANTAI 1, 2, 3 (FACING WEST KE INTERIOR KAFE)
   const elevatorShaftGroup = new THREE.Group();
   elevatorShaftGroup.position.set(ELEVATOR_CONFIG.posX, 0, ELEVATOR_CONFIG.posZ);
 
-  const shaftH = 13.5;
+  // 4 Rel Poros Baja Lift
+  const shaftH = 14.2;
   [
     [-ELEVATOR_CONFIG.width / 2, -ELEVATOR_CONFIG.depth / 2],
     [ELEVATOR_CONFIG.width / 2, -ELEVATOR_CONFIG.depth / 2],
     [-ELEVATOR_CONFIG.width / 2, ELEVATOR_CONFIG.depth / 2],
     [ELEVATOR_CONFIG.width / 2, ELEVATOR_CONFIG.depth / 2]
   ].forEach(([cx, cz]) => {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, shaftH, 0.12), Mat.elevatorShaftFrame);
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, shaftH, 0.1), Mat.elevatorShaftFrame);
     post.position.set(cx, shaftH / 2, cz);
-    const ledStrip = new THREE.Mesh(new THREE.BoxGeometry(0.03, shaftH - 0.2, 0.03), Mat.ledNeonCyan);
+    const ledStrip = new THREE.Mesh(new THREE.BoxGeometry(0.025, shaftH - 0.2, 0.025), Mat.ledNeonGold);
     ledStrip.position.set(cx * 0.94, shaftH / 2, cz * 0.94);
     elevatorShaftGroup.add(post, ledStrip);
   });
 
-  // Shaft Enclosure Panels (Back & Right)
-  const shaftBackGlass = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.1, shaftH, 0.05), Mat.elevatorGlass);
-  shaftBackGlass.position.set(0, shaftH / 2, -ELEVATOR_CONFIG.depth / 2);
-  const shaftRightGlass = new THREE.Mesh(new THREE.BoxGeometry(0.05, shaftH, ELEVATOR_CONFIG.depth - 0.1), Mat.elevatorGlass);
-  shaftRightGlass.position.set(ELEVATOR_CONFIG.width / 2, shaftH / 2, 0);
-  elevatorShaftGroup.add(shaftBackGlass, shaftRightGlass);
-
-  // Landing Portals and Integrated Sliding Glass Doors
+  // Landing Portals and Integrated Sliding Glass Doors on Floors 1, 2, 3 (At X = -ELEVATOR_CONFIG.width / 2)
   const landingDoorLeaves = [];
 
   [0.05, 5.6, 11.2].forEach((fy, flIdx) => {
     const landingFrame = new THREE.Group();
-    landingFrame.position.set(0, fy, ELEVATOR_CONFIG.depth / 2);
+    landingFrame.position.set(-ELEVATOR_CONFIG.width / 2, fy, 0);
 
-    // Archway Gold Frame
-    const archTop = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width + 0.1, 0.35, 0.14), Mat.brassGold);
+    // Archway Gold Frame facing West
+    const archTop = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.35, ELEVATOR_CONFIG.depth + 0.1), Mat.brassGold);
     archTop.position.set(0, 2.45, 0);
-    const archPostL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.45, 0.14), Mat.brassGold);
-    archPostL.position.set(-ELEVATOR_CONFIG.width / 2 - 0.01, 1.22, 0);
-    const archPostR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.45, 0.14), Mat.brassGold);
-    archPostR.position.set(ELEVATOR_CONFIG.width / 2 + 0.01, 1.22, 0);
+    const archPostL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.45, 0.12), Mat.brassGold);
+    archPostL.position.set(0, 1.22, -ELEVATOR_CONFIG.depth / 2 - 0.01);
+    const archPostR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.45, 0.12), Mat.brassGold);
+    archPostR.position.set(0, 1.22, ELEVATOR_CONFIG.depth / 2 + 0.01);
 
     // Digital LED Floor Header Display
-    const dispBox = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.24, 0.08), Mat.blackMetal);
-    dispBox.position.set(0, 2.48, 0.08);
-    const dispScreen = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.18, 0.02), Mat.ledNeonGold);
-    dispScreen.position.set(0, 2.48, 0.12);
+    const dispBox = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.24, 0.75), Mat.blackMetal);
+    dispBox.position.set(-0.08, 2.48, 0);
+    const dispScreen = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.18, 0.68), Mat.ledNeonGold);
+    dispScreen.position.set(-0.12, 2.48, 0);
 
     // Call Button Pillar
-    const callButtonBox = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.38, 0.06), Mat.blackMetal);
-    callButtonBox.position.set(-ELEVATOR_CONFIG.width / 2 - 0.15, 1.25, 0.04);
+    const callButtonBox = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.38, 0.14), Mat.blackMetal);
+    callButtonBox.position.set(-0.04, 1.25, -ELEVATOR_CONFIG.depth / 2 - 0.15);
     const callBtnPill = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 10), Mat.ledNeonCyan);
-    callBtnPill.position.set(-ELEVATOR_CONFIG.width / 2 - 0.15, 1.25, 0.08);
+    callBtnPill.position.set(-0.08, 1.25, -ELEVATOR_CONFIG.depth / 2 - 0.15);
 
     landingFrame.add(archTop, archPostL, archPostR, dispBox, dispScreen, callButtonBox, callBtnPill);
     elevatorShaftGroup.add(landingFrame);
 
-    // Landing Sliding Glass Doors (Left & Right)
-    const doorL = new THREE.Mesh(new THREE.BoxGeometry(0.82, 2.28, 0.03), Mat.doorGlass);
-    doorL.position.set(-0.42, fy + 1.18, ELEVATOR_CONFIG.depth / 2);
-    const doorR = new THREE.Mesh(new THREE.BoxGeometry(0.82, 2.28, 0.03), Mat.doorGlass);
-    doorR.position.set(0.42, fy + 1.18, ELEVATOR_CONFIG.depth / 2);
+    // Landing Sliding Glass Doors (Left & Right along Z-axis)
+    const doorL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 2.28, 0.78), Mat.doorGlass);
+    doorL.position.set(-ELEVATOR_CONFIG.width / 2, fy + 1.18, -0.38);
+    const doorR = new THREE.Mesh(new THREE.BoxGeometry(0.03, 2.28, 0.78), Mat.doorGlass);
+    doorR.position.set(-ELEVATOR_CONFIG.width / 2, fy + 1.18, 0.38);
 
     elevatorShaftGroup.add(doorL, doorR);
-    landingDoorLeaves.push({ floor: flIdx + 1, doorL, doorR, baseLX: -0.42, baseRX: 0.42 });
+    landingDoorLeaves.push({ floor: flIdx + 1, doorL, doorR, baseLZ: -0.38, baseRZ: 0.38 });
   });
 
   dedicatedElevatorRoomGroup.add(elevatorShaftGroup);
 
-  // --------------------------------------------------------------------------
-  // 5. MOVING LUXURY CAPSULE CABIN (Kabin Kaca Mewah di Dalam Poros)
-  // --------------------------------------------------------------------------
+  // 6. MOVING LUXURY CAPSULE CABIN (Kabin Kaca Kapsul Mewah di Poros Sayap Kanan)
   const elevatorCabin = new THREE.Group();
   elevatorCabin.position.set(ELEVATOR_CONFIG.posX, 0.05, ELEVATOR_CONFIG.posZ);
 
@@ -2793,31 +2841,36 @@
   const cabHaloRing = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.035, 12, 24), Mat.ledNeonGold);
   cabHaloRing.rotation.x = Math.PI / 2;
   cabHaloRing.position.y = 2.4;
-  const cabPointLight = new THREE.PointLight(0xfffae0, 1.25, 5.5, 1.6);
+  const cabPointLight = new THREE.PointLight(0xfffae0, 1.3, 5.5, 1.6);
   cabPointLight.position.y = 2.25;
 
-  // Cabin Glass Walls (Back & Right Glass with Brass Handrail)
-  const cabGlassBack = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.22, 2.25, 0.04), Mat.elevatorGlass);
-  cabGlassBack.position.set(0, 1.2, -ELEVATOR_CONFIG.depth / 2 + 0.1);
-  const cabGlassRight = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.25, ELEVATOR_CONFIG.depth - 0.22), Mat.elevatorGlass);
-  cabGlassRight.position.set(ELEVATOR_CONFIG.width / 2 - 0.1, 1.2, 0);
+  // Cabin Panoramic Glass Walls (East, North, South) with Brass Handrails
+  // East Glass (facing village)
+  const cabGlassEast = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.25, ELEVATOR_CONFIG.depth - 0.22), Mat.elevatorGlass);
+  cabGlassEast.position.set(ELEVATOR_CONFIG.width / 2 - 0.1, 1.2, 0);
+  // North Glass
+  const cabGlassNorth = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.22, 2.25, 0.04), Mat.elevatorGlass);
+  cabGlassNorth.position.set(0, 1.2, -ELEVATOR_CONFIG.depth / 2 + 0.1);
+  // South Glass
+  const cabGlassSouth = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.22, 2.25, 0.04), Mat.elevatorGlass);
+  cabGlassSouth.position.set(0, 1.2, ELEVATOR_CONFIG.depth / 2 - 0.1);
 
-  const cabHandrail = new THREE.Mesh(new THREE.BoxGeometry(ELEVATOR_CONFIG.width - 0.35, 0.05, 0.05), Mat.brassGold);
-  cabHandrail.position.set(0, 0.95, -ELEVATOR_CONFIG.depth / 2 + 0.18);
+  const cabHandrailEast = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, ELEVATOR_CONFIG.depth - 0.35), Mat.brassGold);
+  cabHandrailEast.position.set(ELEVATOR_CONFIG.width / 2 - 0.18, 0.95, 0);
 
   // Cabin Touchscreen Control Panel
-  const cabPanel = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.55, 0.04), Mat.blackMetal);
-  cabPanel.position.set(-ELEVATOR_CONFIG.width / 2 + 0.16, 1.25, 0.2);
-  const cabPanelScreen = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.48, 0.02), Mat.ledNeonCyan);
-  cabPanelScreen.position.set(-ELEVATOR_CONFIG.width / 2 + 0.17, 1.25, 0.2);
+  const cabPanel = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.55, 0.16), Mat.blackMetal);
+  cabPanel.position.set(-0.2, 1.25, -ELEVATOR_CONFIG.depth / 2 + 0.18);
+  const cabPanelScreen = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.48, 0.12), Mat.ledNeonCyan);
+  cabPanelScreen.position.set(-0.2, 1.25, -ELEVATOR_CONFIG.depth / 2 + 0.19);
 
-  // Cabin Sliding Glass Doors (Left & Right)
-  const cabDoorL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.22, 0.03), Mat.doorGlass);
-  cabDoorL.position.set(-0.42, 1.2, ELEVATOR_CONFIG.depth / 2 - 0.08);
-  const cabDoorR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.22, 0.03), Mat.doorGlass);
-  cabDoorR.position.set(0.42, 1.2, ELEVATOR_CONFIG.depth / 2 - 0.08);
+  // Cabin Sliding Glass Doors (Facing West into Cafe, sliding along Z-axis)
+  const cabDoorL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 2.22, 0.76), Mat.doorGlass);
+  cabDoorL.position.set(-ELEVATOR_CONFIG.width / 2 + 0.08, 1.2, -0.38);
+  const cabDoorR = new THREE.Mesh(new THREE.BoxGeometry(0.03, 2.22, 0.76), Mat.doorGlass);
+  cabDoorR.position.set(-ELEVATOR_CONFIG.width / 2 + 0.08, 1.2, 0.38);
 
-  elevatorCabin.add(cabFloor, cabTrim, cabCeiling, cabHaloRing, cabPointLight, cabGlassBack, cabGlassRight, cabHandrail, cabPanel, cabPanelScreen, cabDoorL, cabDoorR);
+  elevatorCabin.add(cabFloor, cabTrim, cabCeiling, cabHaloRing, cabPointLight, cabGlassEast, cabGlassNorth, cabGlassSouth, cabHandrailEast, cabPanel, cabPanelScreen, cabDoorL, cabDoorR);
   dedicatedElevatorRoomGroup.add(elevatorCabin);
 
   scene.add(dedicatedElevatorRoomGroup);
@@ -2862,16 +2915,16 @@
 
       const distToElevator = Math.hypot(px - ELEVATOR_CONFIG.posX, pz - ELEVATOR_CONFIG.posZ);
       const isPlayerInside = distToElevator < 1.35;
-      const isPlayerInLobby = (px >= 5.2 && px <= 9.0 && pz >= -8.0 && pz <= -3.2);
+      const isPlayerInLobby = (px >= 7.8 && px <= 12.0 && pz >= -5.2 && pz <= -1.8);
 
       // Check vertical level match (apakah pemain berada di lantai yang sama dengan lift)
       const isSameFloor = Math.abs(py - this.currentY) < 1.8;
 
       // 1. OTOMATIS MEMBUKA PINTU KETIKA PLAYER / NPC MENDEKAT KE LIFT PADA LANTAI AKTIF
       if (!this.isMoving) {
-        if (isSameFloor && (isPlayerInside || distToElevator < 2.6 || isPlayerInLobby)) {
+        if (isSameFloor && (isPlayerInside || distToElevator < 2.8 || isPlayerInLobby)) {
           this.doorTarget = 1.0; // Buka pintu otomatis
-        } else if (!isPlayerInside && distToElevator >= 3.6) {
+        } else if (!isPlayerInside && distToElevator >= 3.6 && !isPlayerInLobby) {
           this.doorTarget = 0.0; // Tutup pintu saat menjauh
         }
       }
@@ -2879,7 +2932,7 @@
       // Show/hide Elevator Floor Selector HUD when in lobby or inside lift
       const hudPanel = document.getElementById('elevator-hud-panel');
       if (hudPanel) {
-        if (isPlayerInLobby || distToElevator < 2.5) {
+        if (isPlayerInLobby || distToElevator < 2.6) {
           hudPanel.classList.remove('hidden');
           requestAnimationFrame(() => {
             hudPanel.classList.remove('opacity-0', 'scale-95');
@@ -2888,23 +2941,23 @@
         } else {
           hudPanel.classList.remove('opacity-100', 'scale-100');
           hudPanel.classList.add('opacity-0', 'scale-95');
-          setTimeout(() => { if (!isPlayerInLobby && distToElevator >= 2.5) hudPanel.classList.add('hidden'); }, 200);
+          setTimeout(() => { if (!isPlayerInLobby && distToElevator >= 2.6) hudPanel.classList.add('hidden'); }, 200);
         }
       }
 
-      // 2. Smooth Sliding Doors Animation (Open / Close)
+      // 2. Smooth Sliding Doors Animation (Open / Close along Z-axis)
       const doorSpeed = dt * 5.0;
       this.doorOpenAmount += (this.doorTarget - this.doorOpenAmount) * Math.min(1.0, doorSpeed);
 
-      const maxSlide = 0.68;
-      this.cabDoorL.position.x = -0.42 - this.doorOpenAmount * maxSlide;
-      this.cabDoorR.position.x = 0.42 + this.doorOpenAmount * maxSlide;
+      const maxSlide = 0.65;
+      this.cabDoorL.position.z = -0.38 - this.doorOpenAmount * maxSlide;
+      this.cabDoorR.position.z = 0.38 + this.doorOpenAmount * maxSlide;
 
       this.landingDoors.forEach(ld => {
         const isCurrentFloor = (ld.floor === this.currentFloor);
         const openAmt = isCurrentFloor ? this.doorOpenAmount : 0.0;
-        ld.doorL.position.x = ld.baseLX - openAmt * maxSlide;
-        ld.doorR.position.x = ld.baseRX + openAmt * maxSlide;
+        ld.doorL.position.z = ld.baseLZ - openAmt * maxSlide;
+        ld.doorR.position.z = ld.baseRZ + openAmt * maxSlide;
       });
 
       // 3. Smooth Elevator Movement (Hanya meluncur jika pintu sudah tertutup rapat)
@@ -5779,7 +5832,7 @@
   const PLAYER_RADIUS = 0.38;
 
     function resolveCollisions(pos, vel) {
-    const isElevatorZone = (Math.abs(pos.x - 7.2) < 1.35 && Math.abs(pos.z - (-5.8)) < 1.35);
+    const isElevatorZone = (pos.x >= 8.5 && pos.x <= 12.0 && pos.z >= -5.0 && pos.z <= -2.0);
 
     // Multi-Floor Level Clamping & Obstacle Selection
     let currentObstacles = obstaclesL1;
@@ -5790,6 +5843,10 @@
       if (!isElevatorZone) {
         pos.x = Math.max(-8.5, Math.min(8.5, pos.x));
         pos.z = Math.max(-7.5, Math.min(7.5, pos.z));
+      } else {
+        // Inside Right-Wing Glass Elevator Pavilion on Rooftop
+        pos.x = Math.max(8.5, Math.min(11.8, pos.x));
+        pos.z = Math.max(-4.8, Math.min(-2.2, pos.z));
       }
     } else if (pos.y > 2.8) {
       // LANTAI 2 (Y = 5.6) + FRONT OUTDOOR BALCONY (Z: 8.0 to 11.6)
@@ -5805,47 +5862,23 @@
             else pos.z = 8.4;
           }
         }
-
-        // Elevator Room Left Partition Wall at X = 5.4 (Z: -8.0 to -3.6)
-        if (pos.z <= -3.6 && pos.z >= -8.0) {
-          if (pos.x > 5.1 && pos.x < 5.7) {
-            if (pos.x < 5.4) pos.x = 5.1;
-            else pos.x = 5.7;
-          }
-        }
-        // Elevator Room Front Partition Wall at Z = -3.6 (Except Archway X: 6.0 to 8.4)
-        if (pos.x < 6.0 || pos.x > 8.4) {
-          if (pos.x >= 5.4 && pos.x <= 9.0) {
-            if (pos.z > -3.9 && pos.z < -3.3) {
-              if (pos.z < -3.6) pos.z = -3.9;
-              else pos.z = -3.3;
-            }
-          }
-        }
+      } else {
+        // Inside Right-Wing Glass Elevator Landing on Floor 2
+        pos.x = Math.max(8.5, Math.min(11.8, pos.x));
+        pos.z = Math.max(-4.8, Math.min(-2.2, pos.z));
       }
     } else {
       // LANTAI 1 (Ground Floor)
       currentObstacles = obstaclesL1;
-      if (!isElevatorZone && pos.z <= 7.8) {
-        pos.x = Math.max(-8.6, Math.min(8.6, pos.x));
-        pos.z = Math.max(-7.6, pos.z);
-
-        // Elevator Room Left Partition Wall at X = 5.4 (Z: -8.0 to -3.6)
-        if (pos.z <= -3.6 && pos.z >= -8.0) {
-          if (pos.x > 5.1 && pos.x < 5.7) {
-            if (pos.x < 5.4) pos.x = 5.1;
-            else pos.x = 5.7;
-          }
+      if (!isElevatorZone) {
+        if (pos.z <= 7.8) {
+          pos.x = Math.max(-8.6, Math.min(8.6, pos.x));
+          pos.z = Math.max(-7.6, pos.z);
         }
-        // Elevator Room Front Partition Wall at Z = -3.6 (Except Archway X: 6.0 to 8.4)
-        if (pos.x < 6.0 || pos.x > 8.4) {
-          if (pos.x >= 5.4 && pos.x <= 9.0) {
-            if (pos.z > -3.9 && pos.z < -3.3) {
-              if (pos.z < -3.6) pos.z = -3.9;
-              else pos.z = -3.3;
-            }
-          }
-        }
+      } else {
+        // Inside Right-Wing Glass Elevator Landing on Floor 1
+        pos.x = Math.max(8.5, Math.min(11.8, pos.x));
+        pos.z = Math.max(-4.8, Math.min(-2.2, pos.z));
       }
     }
 
