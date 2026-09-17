@@ -2931,14 +2931,11 @@
       const isPlayerInLobby = (px >= 7.5 && px <= 11.8 && pz >= -5.2 && pz <= -1.8 && Math.abs(py - this.currentY) < 1.5);
       const isPlayerNearDoor = (distToElevatorXZ < 2.8 && Math.abs(py - this.currentY) < 1.5);
 
-      // Cek apakah ada NPC yang sedang aktif melangkah masuk atau keluar lift (DILARANG MENUTUP PINTU / PINDAH LANTAI!)
-      const isNpcBoardingOrExiting = customers.some(c => {
-        if (!c.mesh || !c.mesh.root) return false;
-        return (
-          c.state === 'enter_lift' || c.state === 'exit_lift' ||
-          c.state === 'enter_lift_exit' || c.state === 'exit_lift_exit'
-        );
-      });
+      // Cek apakah ada Pelanggan atau Pelayan yang sedang aktif melangkah masuk/keluar lift (DILARANG MENUTUP PINTU / PINDAH LANTAI!)
+      const isBoardingOrExiting = (
+        customers.some(c => c.mesh && (c.state === 'enter_lift' || c.state === 'exit_lift' || c.state === 'enter_lift_exit' || c.state === 'exit_lift_exit')) ||
+        (typeof waiters !== 'undefined' && waiters.some(w => w.mesh && (w.state === 'enter_lift' || w.state === 'exit_lift' || w.state === 'enter_lift_return' || w.state === 'exit_lift_return')))
+      );
 
       // Cek apakah ada NPC di lantai lift saat ini yang menunggu atau mendekat
       const isNpcAtCurrentFloor = customers.some(c => {
@@ -2956,7 +2953,7 @@
 
       // 1. SMART ELEVATOR DISPATCHER & DOOR CONTROL
       if (!this.isMoving) {
-        if (isNpcBoardingOrExiting) {
+        if (isBoardingOrExiting) {
           // Ada penumpang yang sedang melangkah: tahan pintu tetap terbuka penuh!
           this.doorTarget = 1.0;
           this.doorHoldTimer = Math.max(this.doorHoldTimer, 2.0);
@@ -3040,12 +3037,19 @@
               player.root.position.y = this.currentY;
             }
 
-            // Bawa seluruh NPC penumpang lift secara mulus
+            // Bawa seluruh Pelanggan & Pelayan penumpang lift secara mulus
             customers.forEach(c => {
               if (c.mesh && c.mesh.root && (c.state === 'riding_lift' || c.state === 'riding_lift_exit')) {
                 c.mesh.root.position.y = this.currentY;
               }
             });
+            if (typeof waiters !== 'undefined') {
+              waiters.forEach(w => {
+                if (w.mesh && w.mesh.root && (w.state === 'riding_lift' || w.state === 'riding_lift_return')) {
+                  w.mesh.root.position.y = this.currentY;
+                }
+              });
+            }
           } else {
             // Tiba di lantai tujuan!
             this.currentY = this.targetY;
@@ -5127,31 +5131,94 @@
   `;
   document.getElementById('bubble-container').appendChild(baristaBubble);
 
-  // 3. Waiter Andi
-  const waiter = createHumanoid({
-    skinMat: Mat.skin,
-    hairMat: Mat.hairDark,
-    shirtMat: Mat.shirtWhite,
-    pantsMat: Mat.vestDark,
-    vestMat: Mat.vestDark
-  });
-  waiter.root.position.set(3.5, 0, 0.5);
-  scene.add(waiter.root);
+  // 3. Squad Pelayan Multi-Lantai (Andi, Bimo, & Citra)
+  const waiters = [
+    {
+      id: 1,
+      name: 'Pelayan Andi',
+      title: 'Pelayan Andi',
+      roleIcon: '🤵',
+      colorBadge: 'border-cyan-400 bg-slate-900/90 text-cyan-100 shadow-cyan-900/40',
+      tailBorder: 'border-t-cyan-400',
+      restPos: new THREE.Vector3(3.2, 0.05, 0.5),
+      mesh: createHumanoid({
+        skinMat: Mat.skin,
+        hairMat: Mat.hairDark,
+        shirtMat: Mat.shirtWhite,
+        pantsMat: Mat.vestDark,
+        vestMat: Mat.vestDark
+      })
+    },
+    {
+      id: 2,
+      name: 'Pelayan Bimo',
+      title: 'Pelayan Bimo',
+      roleIcon: '🤵',
+      colorBadge: 'border-rose-400 bg-slate-900/90 text-rose-100 shadow-rose-900/40',
+      tailBorder: 'border-t-rose-400',
+      restPos: new THREE.Vector3(4.3, 0.05, 0.5),
+      mesh: createHumanoid({
+        skinMat: Mat.skin,
+        hairMat: Mat.hairBrown,
+        shirtMat: Mat.shirtWhite,
+        pantsMat: Mat.pantsJeans,
+        vestMat: new THREE.MeshStandardMaterial({ color: 0x881337, roughness: 0.4 })
+      })
+    },
+    {
+      id: 3,
+      name: 'Pelayan Citra',
+      title: 'Pelayan Citra',
+      roleIcon: '👩‍💼',
+      colorBadge: 'border-emerald-400 bg-slate-900/90 text-emerald-100 shadow-emerald-900/40',
+      tailBorder: 'border-t-emerald-400',
+      restPos: new THREE.Vector3(5.4, 0.05, 0.5),
+      mesh: createHumanoid({
+        skinMat: Mat.skin,
+        hairMat: Mat.hairDark,
+        shirtMat: Mat.shirtWhite,
+        pantsMat: Mat.vestDark,
+        vestMat: new THREE.MeshStandardMaterial({ color: 0x065f46, roughness: 0.4 })
+      })
+    }
+  ];
 
-  // 3D Floating Speech Bubble for Waiter Andi
-  const waiterBubble = document.createElement('div');
-  waiterBubble.className = 'order-bubble';
-  waiterBubble.innerHTML = `
-    <div class="order-bubble-card border-cyan-400 bg-slate-900/90 text-cyan-100 shadow-cyan-900/40">
-      <span class="text-xl">🤵</span>
-      <div class="flex flex-col">
-        <span class="font-outfit font-extrabold text-xs text-cyan-200">Pelayan Andi</span>
-        <span id="waiter-bubble-status" class="text-[10px] text-cyan-300 font-medium">Siap Mengantar</span>
+  // Inisialisasi setiap pelayan di dalam scene
+  waiters.forEach(w => {
+    w.state = 'idle';
+    w.targetTable = null;
+    w.targetCustomer = null;
+    w.carryingItem = null;
+    w.timer = 0;
+    w.speed = 3.3;
+    w.walkCycle = 0;
+    w.sajiPos = new THREE.Vector3(0.8, 0.05, -0.8);
+    w.waypoints = [];
+    w.currentWpIndex = 0;
+
+    w.mesh.root.position.copy(w.restPos);
+    w.mesh.root.rotation.y = -Math.PI / 2;
+    scene.add(w.mesh.root);
+
+    // 3D Floating Speech Bubble untuk setiap pelayan
+    const bubble = document.createElement('div');
+    bubble.className = 'order-bubble';
+    bubble.innerHTML = `
+      <div class="order-bubble-card ${w.colorBadge}">
+        <span class="text-xl">${w.roleIcon}</span>
+        <div class="flex flex-col">
+          <span class="font-outfit font-extrabold text-xs text-white">${w.title}</span>
+          <span id="waiter-${w.id}-bubble-status" class="text-[10px] font-medium text-amber-200">Siap Mengantar</span>
+        </div>
       </div>
-    </div>
-    <div class="order-bubble-tail border-t-cyan-400"></div>
-  `;
-  document.getElementById('bubble-container').appendChild(waiterBubble);
+      <div class="order-bubble-tail ${w.tailBorder}"></div>
+    `;
+    document.getElementById('bubble-container').appendChild(bubble);
+    w.bubbleEl = bubble;
+  });
+
+  const waiter = waiters[0].mesh;
+  const waiterBubble = waiters[0].bubbleEl;
 
   function updateStaffBubble(bubbleEl, text) {
     if (!bubbleEl) return;
@@ -5452,175 +5519,426 @@
     }
   };
 
+  // =========================================================================
+  // 14. MULTI-WAITER SQUAD AI CONTROLLER (PENGANTARAN MULTI-LANTAI & LIFT OTOMATIS)
+  // =========================================================================
+  function updateSingleWaiterAI(w, dt) {
+    if (w.knockdown && w.knockdown.active) return;
+    if (typeof updateKnockdownEntity === 'function' && updateKnockdownEntity(w, dt, performance.now())) return;
+    w.timer += dt;
+
+    const curPos = w.mesh.root.position;
+
+    // -------------------------------------------------------------
+    // 1. STATE: IDLE (Mencari Pesanan Jadi di Meja Saji)
+    // -------------------------------------------------------------
+    if (w.state === 'idle') {
+      w.mesh.setTray(null);
+      w.carryingItem = null;
+
+      // Cari meja pelanggan yang sedang menunggu pesanan dan sudah siap di meja saji
+      const waitingTables = tables.filter(t => t.customer && t.customer.state === 'waiting');
+      let matchedTable = null;
+      let matchedItemIndex = -1;
+
+      for (const tbl of waitingTables) {
+        // Pastikan meja ini belum diambil/dikunci oleh pelayan lain yang sedang jalan
+        const isClaimedByOther = waiters.some(otherW => otherW !== w && otherW.targetTable === tbl);
+        if (isClaimedByOther) continue;
+
+        const cust = tbl.customer;
+        const idx = readyDrinksOnCounter.findIndex(item => 
+          item.id === cust.order.id || 
+          item.type === cust.order.type || 
+          item.type === cust.order.id ||
+          (cust.order.id.includes('donut') && (item.type === 'donut' || item.id.includes('donut'))) ||
+          (cust.order.id.includes('strawberry') && (item.type === 'strawberry' || item.id.includes('strawberry'))) ||
+          (cust.order.id.includes('croissant') && (item.type === 'croissant' || item.id.includes('croissant'))) ||
+          (cust.order.id.includes('matcha') && (item.type === 'matcha' || item.id.includes('matcha'))) ||
+          (cust.order.id.includes('kenangan') && (item.type === 'coffee' || item.id.includes('kenangan'))) ||
+          (cust.order.id.includes('latte') && (item.type === 'latte' || item.type === 'coffee' || item.id.includes('latte')))
+        );
+        if (idx !== -1) {
+          matchedTable = tbl;
+          matchedItemIndex = idx;
+          break;
+        }
+      }
+
+      if (matchedTable && matchedItemIndex !== -1) {
+        w.targetTable = matchedTable;
+        w.targetCustomer = matchedTable.customer;
+        w.state = 'walk_saji';
+        w.timer = 0;
+        updateStaffBubble(w.bubbleEl, '🏃‍♂️ Mengambil ' + w.targetCustomer.order.name + '...');
+      }
+    }
+    // -------------------------------------------------------------
+    // 2. STATE: WALK_SAJI (Berjalan ke Meja Saji Barista)
+    // -------------------------------------------------------------
+    else if (w.state === 'walk_saji') {
+      if (walkWaiterTowards(w, w.sajiPos, dt)) {
+        w.state = 'pickup';
+        w.timer = 0;
+      }
+    }
+    // -------------------------------------------------------------
+    // 3. STATE: PICKUP (Mengambil Pesanan & Nampan)
+    // -------------------------------------------------------------
+    else if (w.state === 'pickup') {
+      if (w.timer > 0.3) {
+        if (!w.targetCustomer || w.targetCustomer.state !== 'waiting') {
+          w.state = 'walk_rest';
+          return;
+        }
+
+        let itemIdx = readyDrinksOnCounter.findIndex(item => 
+          item.id === w.targetCustomer.order.id || 
+          item.type === w.targetCustomer.order.type || 
+          item.type === w.targetCustomer.order.id ||
+          (w.targetCustomer.order.id.includes('donut') && (item.type === 'donut' || item.id.includes('donut'))) ||
+          (w.targetCustomer.order.id.includes('strawberry') && (item.type === 'strawberry' || item.id.includes('strawberry'))) ||
+          (w.targetCustomer.order.id.includes('croissant') && (item.type === 'croissant' || item.id.includes('croissant'))) ||
+          (w.targetCustomer.order.id.includes('matcha') && (item.type === 'matcha' || item.id.includes('matcha')))
+        );
+
+        if (itemIdx === -1 && readyDrinksOnCounter.length > 0) itemIdx = 0;
+
+        if (itemIdx !== -1 && readyDrinksOnCounter.length > 0) {
+          w.carryingItem = readyDrinksOnCounter.splice(itemIdx, 1)[0];
+          updateCounterProps();
+          
+          const trayType = w.carryingItem.type || w.carryingItem.id || 'coffee';
+          w.mesh.setTray(trayType);
+
+          // Rute Pengantaran Berdasarkan Lantai Meja
+          if (w.targetTable.floor === 1) {
+            // Lantai 1: Langsung berjalan ke depan meja
+            w.state = 'walk_table';
+            w.waypoints = [
+              new THREE.Vector3(w.targetTable.pos.x, 0.05, w.targetTable.pos.z - 1.8)
+            ];
+            w.currentWpIndex = 0;
+            w.timer = 0;
+            updateStaffBubble(w.bubbleEl, w.targetCustomer.order.icon + ' Mengantar ke ' + w.targetTable.name + '...');
+          } else {
+            // Lantai 2 (Lounge/Balkon) atau Lantai 3 (Rooftop): Gunakan LIFT!
+            w.state = 'walk_to_lift';
+            w.waypoints = [
+              new THREE.Vector3(4.5, 0.05, 0.5),
+              new THREE.Vector3(8.6, 0.05, -3.5)
+            ];
+            w.currentWpIndex = 0;
+            w.timer = 0;
+            updateStaffBubble(w.bubbleEl, '🛗 Membawa ' + w.targetCustomer.order.name + ' ke Lift (' + w.targetTable.name + ')...');
+          }
+        } else {
+          w.mesh.setTray(null);
+          w.state = 'walk_rest';
+        }
+      }
+    }
+    // -------------------------------------------------------------
+    // 4. STATE: WALK_TO_LIFT (Berjalan ke Lobi Lift Lantai 1)
+    // -------------------------------------------------------------
+    else if (w.state === 'walk_to_lift') {
+      const targetWp = w.waypoints[w.currentWpIndex];
+      if (walkWaiterTowards(w, targetWp, dt)) {
+        w.currentWpIndex++;
+        if (w.currentWpIndex >= w.waypoints.length) {
+          w.state = 'wait_lift';
+          w.mesh.root.position.set(8.6, 0.05, -3.5);
+          w.mesh.root.rotation.y = Math.PI / 2;
+          ElevatorSystem.callElevatorToFloor(1);
+          updateStaffBubble(w.bubbleEl, '🛗 Menunggu Lift ke ' + w.targetTable.name + '...');
+        }
+      }
+    }
+    // -------------------------------------------------------------
+    // 5. STATE: WAIT_LIFT (Menunggu Lift Turun & Buka Pintu di Lantai 1)
+    // -------------------------------------------------------------
+    else if (w.state === 'wait_lift') {
+      w.mesh.legL.rotation.x = 0;
+      w.mesh.legR.rotation.x = 0;
+      ElevatorSystem.callElevatorToFloor(1);
+
+      if (ElevatorSystem.currentFloor === 1 && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.25) {
+        w.state = 'enter_lift';
+      }
+    }
+    // -------------------------------------------------------------
+    // 6. STATE: ENTER_LIFT (Masuk ke Kabin Lift)
+    // -------------------------------------------------------------
+    else if (w.state === 'enter_lift') {
+      const targetX = 10.6;
+      const dx = targetX - curPos.x;
+      if (Math.abs(dx) < 0.15) {
+        w.mesh.root.position.set(10.6, 0.05, -3.5);
+        w.mesh.root.rotation.y = -Math.PI / 2;
+        w.state = 'riding_lift';
+        ElevatorSystem.goToFloor(w.targetTable.floor);
+        updateStaffBubble(w.bubbleEl, '✨ Naik Lift ke ' + w.targetTable.name + '...');
+      } else {
+        curPos.x += Math.sign(dx) * w.speed * 0.85 * dt;
+        w.mesh.root.rotation.y = Math.PI / 2;
+        w.walkCycle += dt * 8.5;
+        w.mesh.legL.rotation.x = Math.sin(w.walkCycle) * 0.45;
+        w.mesh.legR.rotation.x = -Math.sin(w.walkCycle) * 0.45;
+      }
+    }
+    // -------------------------------------------------------------
+    // 7. STATE: RIDING_LIFT (Kabin Lift Bergerak Naik Membawa Pelayan)
+    // -------------------------------------------------------------
+    else if (w.state === 'riding_lift') {
+      curPos.y = ElevatorSystem.currentY;
+      w.mesh.legL.rotation.x = 0;
+      w.mesh.legR.rotation.x = 0;
+
+      if (!ElevatorSystem.isMoving && ElevatorSystem.currentFloor !== w.targetTable.floor) {
+        ElevatorSystem.callElevatorToFloor(w.targetTable.floor);
+      }
+
+      if (ElevatorSystem.currentFloor === w.targetTable.floor && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.25) {
+        w.state = 'exit_lift';
+      }
+    }
+    // -------------------------------------------------------------
+    // 8. STATE: EXIT_LIFT (Keluar Lift di Lantai Tujuan Meja)
+    // -------------------------------------------------------------
+    else if (w.state === 'exit_lift') {
+      const targetX = 8.6;
+      const dx = targetX - curPos.x;
+      if (Math.abs(dx) < 0.15) {
+        curPos.x = 8.6;
+        curPos.y = w.targetTable.pos.y;
+        w.state = 'walk_table';
+
+        const tablePos = w.targetTable.pos;
+        if (w.targetTable.floor === 2 && w.targetTable.id >= 8) {
+          // Meja Balkon Outdoor Lantai 2 (Lewati pintu kaca balkon)
+          w.waypoints = [
+            new THREE.Vector3(4.0, 5.6, 2.0),
+            new THREE.Vector3(0.0, 5.6, 6.8),
+            new THREE.Vector3(0.0, 5.6, 9.2),
+            new THREE.Vector3(tablePos.x, 5.6, tablePos.z - 1.2)
+          ];
+        } else if (w.targetTable.floor === 2) {
+          // Meja Lounge Lantai 2
+          w.waypoints = [
+            new THREE.Vector3(3.0, 5.6, tablePos.z),
+            new THREE.Vector3(tablePos.x, 5.6, tablePos.z - 1.2)
+          ];
+        } else {
+          // Meja Rooftop Lantai 3
+          w.waypoints = [
+            new THREE.Vector3(3.0, 11.2, tablePos.z),
+            new THREE.Vector3(tablePos.x, 11.2, tablePos.z - 1.2)
+          ];
+        }
+        w.currentWpIndex = 0;
+        updateStaffBubble(w.bubbleEl, w.targetCustomer.order.icon + ' Mengantar ke ' + w.targetTable.name + '...');
+      } else {
+        curPos.x += Math.sign(dx) * w.speed * 0.85 * dt;
+        w.mesh.root.rotation.y = -Math.PI / 2;
+        w.walkCycle += dt * 8.5;
+        w.mesh.legL.rotation.x = Math.sin(w.walkCycle) * 0.45;
+        w.mesh.legR.rotation.x = -Math.sin(w.walkCycle) * 0.45;
+      }
+    }
+    // -------------------------------------------------------------
+    // 9. STATE: WALK_TABLE (Berjalan Menuju Meja Makan Pelanggan)
+    // -------------------------------------------------------------
+    else if (w.state === 'walk_table') {
+      if (!w.targetTable || !w.targetTable.customer || w.targetTable.customer.state !== 'waiting') {
+        w.mesh.setTray(null);
+        if (w.targetTable && w.targetTable.floor > 1) {
+          w.state = 'walk_to_lift_return';
+          w.waypoints = [ new THREE.Vector3(8.6, w.targetTable.pos.y, -3.5) ];
+          w.currentWpIndex = 0;
+        } else {
+          w.state = 'walk_rest';
+        }
+        return;
+      }
+
+      const targetWp = w.waypoints[w.currentWpIndex];
+      if (walkWaiterTowards(w, targetWp, dt)) {
+        w.currentWpIndex++;
+        if (w.currentWpIndex >= w.waypoints.length) {
+          w.state = 'serve';
+          w.timer = 0;
+        }
+      }
+    }
+    // -------------------------------------------------------------
+    // 10. STATE: SERVE (Menyajikan Minuman/Makanan ke Pelanggan)
+    // -------------------------------------------------------------
+    else if (w.state === 'serve') {
+      if (w.timer > 0.4) {
+        if (w.targetTable && w.targetTable.customer && w.targetTable.customer.state === 'waiting') {
+          serveCustomer(w.targetTable.customer, w.name);
+          updateStaffBubble(w.bubbleEl, '😊 Silakan dinikmati ' + w.targetTable.customer.order.name + '!');
+        }
+        w.mesh.setTray(null);
+        w.carryingItem = null;
+
+        if (w.targetTable && w.targetTable.floor > 1) {
+          // Jika di lantai atas, kembali ke lobi lift untuk turun
+          w.state = 'walk_to_lift_return';
+          const tablePos = w.targetTable.pos;
+          if (w.targetTable.floor === 2 && w.targetTable.id >= 8) {
+            w.waypoints = [
+              new THREE.Vector3(0.0, 5.6, 7.5),
+              new THREE.Vector3(4.0, 5.6, 2.0),
+              new THREE.Vector3(8.6, 5.6, -3.5)
+            ];
+          } else {
+            w.waypoints = [
+              new THREE.Vector3(3.0, tablePos.y, -3.5),
+              new THREE.Vector3(8.6, tablePos.y, -3.5)
+            ];
+          }
+          w.currentWpIndex = 0;
+        } else {
+          // Lantai 1: Langsung kembali ke pos pelayan
+          w.state = 'walk_rest';
+          w.timer = 0;
+        }
+      }
+    }
+    // -------------------------------------------------------------
+    // 11. STATE: WALK_TO_LIFT_RETURN (Menuju Lift di Lantai Atas)
+    // -------------------------------------------------------------
+    else if (w.state === 'walk_to_lift_return') {
+      const targetWp = w.waypoints[w.currentWpIndex];
+      if (walkWaiterTowards(w, targetWp, dt)) {
+        w.currentWpIndex++;
+        if (w.currentWpIndex >= w.waypoints.length) {
+          w.state = 'wait_lift_return';
+          w.mesh.root.position.set(8.6, w.targetTable.pos.y, -3.5);
+          w.mesh.root.rotation.y = Math.PI / 2;
+          ElevatorSystem.callElevatorToFloor(w.targetTable.floor);
+          updateStaffBubble(w.bubbleEl, '🛗 Menunggu Lift Turun ke Lantai 1...');
+        }
+      }
+    }
+    // -------------------------------------------------------------
+    // 12. STATE: WAIT_LIFT_RETURN (Menunggu Lift Tiba di Lantai Atas)
+    // -------------------------------------------------------------
+    else if (w.state === 'wait_lift_return') {
+      w.mesh.legL.rotation.x = 0;
+      w.mesh.legR.rotation.x = 0;
+      ElevatorSystem.callElevatorToFloor(w.targetTable.floor);
+
+      if (ElevatorSystem.currentFloor === w.targetTable.floor && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.25) {
+        w.state = 'enter_lift_return';
+      }
+    }
+    // -------------------------------------------------------------
+    // 13. STATE: ENTER_LIFT_RETURN (Masuk Lift dari Lantai Atas)
+    // -------------------------------------------------------------
+    else if (w.state === 'enter_lift_return') {
+      const targetX = 10.6;
+      const dx = targetX - curPos.x;
+      if (Math.abs(dx) < 0.15) {
+        w.mesh.root.position.set(10.6, w.targetTable.pos.y, -3.5);
+        w.mesh.root.rotation.y = -Math.PI / 2;
+        w.state = 'riding_lift_return';
+        ElevatorSystem.goToFloor(1);
+        updateStaffBubble(w.bubbleEl, '🛗 Turun Lift ke Lantai 1...');
+      } else {
+        curPos.x += Math.sign(dx) * w.speed * 0.85 * dt;
+        w.mesh.root.rotation.y = Math.PI / 2;
+        w.walkCycle += dt * 8.5;
+        w.mesh.legL.rotation.x = Math.sin(w.walkCycle) * 0.45;
+        w.mesh.legR.rotation.x = -Math.sin(w.walkCycle) * 0.45;
+      }
+    }
+    // -------------------------------------------------------------
+    // 14. STATE: RIDING_LIFT_RETURN (Lift Meluncur Turun ke Lantai 1)
+    // -------------------------------------------------------------
+    else if (w.state === 'riding_lift_return') {
+      curPos.y = ElevatorSystem.currentY;
+      w.mesh.legL.rotation.x = 0;
+      w.mesh.legR.rotation.x = 0;
+
+      if (!ElevatorSystem.isMoving && ElevatorSystem.currentFloor !== 1) {
+        ElevatorSystem.callElevatorToFloor(1);
+      }
+
+      if (ElevatorSystem.currentFloor === 1 && !ElevatorSystem.isMoving && ElevatorSystem.doorOpenAmount > 0.25) {
+        w.state = 'exit_lift_return';
+      }
+    }
+    // -------------------------------------------------------------
+    // 15. STATE: EXIT_LIFT_RETURN (Keluar Lift di Lantai 1)
+    // -------------------------------------------------------------
+    else if (w.state === 'exit_lift_return') {
+      const targetX = 8.6;
+      const dx = targetX - curPos.x;
+      if (Math.abs(dx) < 0.15) {
+        w.mesh.root.position.set(8.6, 0.05, -3.5);
+        w.mesh.root.rotation.y = -Math.PI / 2;
+        w.state = 'walk_rest';
+        w.targetTable = null;
+        w.targetCustomer = null;
+      } else {
+        curPos.x += Math.sign(dx) * w.speed * 0.85 * dt;
+        w.mesh.root.rotation.y = -Math.PI / 2;
+        w.walkCycle += dt * 8.5;
+        w.mesh.legL.rotation.x = Math.sin(w.walkCycle) * 0.45;
+        w.mesh.legR.rotation.x = -Math.sin(w.walkCycle) * 0.45;
+      }
+    }
+    // -------------------------------------------------------------
+    // 16. STATE: WALK_REST (Kembali ke Pos Pelayan)
+    // -------------------------------------------------------------
+    else if (w.state === 'walk_rest') {
+      if (walkWaiterTowards(w, w.restPos, dt)) {
+        w.state = 'idle';
+        w.targetTable = null;
+        w.targetCustomer = null;
+        w.mesh.root.rotation.y = -Math.PI / 2;
+        setTimeout(() => { if (w.state === 'idle' && w.bubbleEl) w.bubbleEl.style.display = 'none'; }, 2000);
+      }
+    }
+  }
+
+  function walkWaiterTowards(w, targetPos, dt) {
+    const curPos = w.mesh.root.position;
+    const dx = targetPos.x - curPos.x;
+    const dz = targetPos.z - curPos.z;
+    const dist = Math.hypot(dx, dz);
+
+    if (dist < 0.18) {
+      w.mesh.legL.rotation.x = 0;
+      w.mesh.legR.rotation.x = 0;
+      return true;
+    }
+
+    const step = Math.min(dist, w.speed * dt);
+    curPos.x += (dx / dist) * step;
+    curPos.z += (dz / dist) * step;
+
+    const targetYaw = Math.atan2(dx, dz);
+    w.mesh.root.rotation.y = lerpAngle(w.mesh.root.rotation.y, targetYaw, dt * 8.0);
+
+    w.walkCycle += dt * 9.5;
+    w.mesh.legL.rotation.x = Math.sin(w.walkCycle) * 0.45;
+    w.mesh.legR.rotation.x = -Math.sin(w.walkCycle) * 0.45;
+
+    if (!w.mesh.currentTray) {
+      w.mesh.armL.rotation.x = -Math.sin(w.walkCycle) * 0.35;
+      w.mesh.armR.rotation.x = Math.sin(w.walkCycle) * 0.35;
+    }
+    return false;
+  }
+
   const waiterAI = {
-    state: 'idle',
-    targetTable: null,
-    targetCustomer: null,
-    carryingItem: null,
-    timer: 0,
-    speed: 3.2,
-    walkCycle: 0,
-    restPos: new THREE.Vector3(4.0, 0, 0.5),
-    sajiPos: new THREE.Vector3(0.8, 0, -0.8),
-
     update: function(dt) {
-      if (waiter.knockdown && waiter.knockdown.active) return;
-      this.timer += dt;
-
-      if (this.state === 'idle') {
-        waiter.setTray(null);
-        this.carryingItem = null;
-
-        // Find a waiting customer whose ordered item is ready on the counter
-        const waitingTables = tables.filter(t => t.customer && t.customer.state === 'waiting');
-        let matchedTable = null;
-        let matchedItemIndex = -1;
-
-        for (const tbl of waitingTables) {
-          const cust = tbl.customer;
-          const idx = readyDrinksOnCounter.findIndex(item => 
-            item.id === cust.order.id || 
-            item.type === cust.order.type || 
-            item.type === cust.order.id ||
-            (cust.order.id.includes('donut') && (item.type === 'donut' || item.id.includes('donut'))) ||
-            (cust.order.id.includes('strawberry') && (item.type === 'strawberry' || item.id.includes('strawberry'))) ||
-            (cust.order.id.includes('croissant') && (item.type === 'croissant' || item.id.includes('croissant'))) ||
-            (cust.order.id.includes('matcha') && (item.type === 'matcha' || item.id.includes('matcha'))) ||
-            (cust.order.id.includes('kenangan') && (item.type === 'coffee' || item.id.includes('kenangan'))) ||
-            (cust.order.id.includes('latte') && (item.type === 'latte' || item.type === 'coffee' || item.id.includes('latte')))
-          );
-          if (idx !== -1) {
-            matchedTable = tbl;
-            matchedItemIndex = idx;
-            break;
-          }
-        }
-
-        // If matched item is found, go pick it up!
-        if (matchedTable && matchedItemIndex !== -1) {
-          this.targetTable = matchedTable;
-          this.targetCustomer = matchedTable.customer;
-          this.state = 'walk_saji';
-          this.timer = 0;
-          updateStaffBubble(waiterBubble, `🏃‍♂️ Mengambil ${this.targetCustomer.order.name} di Meja Saji...`);
-        } else if (waitingTables.length > 0 && readyDrinksOnCounter.length === 0) {
-          if (this.timer > 3.5) {
-            this.timer = 0;
-            updateStaffBubble(waiterBubble, `⏳ Menunggu Sarah meracik ${waitingTables[0].customer.order.name}...`);
-            setTimeout(() => { if (this.state === 'idle' && waiterBubble) waiterBubble.style.display = 'none'; }, 2000);
-          }
-        }
-      } else if (this.state === 'walk_saji') {
-        if (this.walkTowards(this.sajiPos, dt)) {
-          this.state = 'pickup';
-          this.timer = 0;
-        }
-      } else if (this.state === 'pickup') {
-        if (this.timer > 0.35) {
-          if (!this.targetCustomer || this.targetCustomer.state !== 'waiting') {
-            this.state = 'walk_rest';
-            return;
-          }
-
-          let itemIdx = readyDrinksOnCounter.findIndex(item => 
-            item.id === this.targetCustomer.order.id || 
-            item.type === this.targetCustomer.order.type || 
-            item.type === this.targetCustomer.order.id ||
-            (this.targetCustomer.order.id.includes('donut') && (item.type === 'donut' || item.id.includes('donut'))) ||
-            (this.targetCustomer.order.id.includes('strawberry') && (item.type === 'strawberry' || item.id.includes('strawberry'))) ||
-            (this.targetCustomer.order.id.includes('croissant') && (item.type === 'croissant' || item.id.includes('croissant'))) ||
-            (this.targetCustomer.order.id.includes('matcha') && (item.type === 'matcha' || item.id.includes('matcha')))
-          );
-
-          if (itemIdx === -1 && readyDrinksOnCounter.length > 0) itemIdx = 0;
-
-          if (itemIdx !== -1 && readyDrinksOnCounter.length > 0) {
-            this.carryingItem = readyDrinksOnCounter.splice(itemIdx, 1)[0];
-            updateCounterProps();
-            
-            const trayType = this.carryingItem.type || this.carryingItem.id || 'coffee';
-            waiter.setTray(trayType);
-
-            this.state = 'walk_table';
-            this.timer = 0;
-            updateStaffBubble(waiterBubble, `${this.targetCustomer.order.icon} Mengantar ${this.targetCustomer.order.name} ke Meja ${this.targetTable.id}...`);
-          } else {
-            waiter.setTray(null);
-            this.state = 'walk_rest';
-          }
-        }
-      } else if (this.state === 'walk_table') {
-        if (!this.targetTable || !this.targetTable.customer || this.targetTable.customer.state !== 'waiting') {
-          const otherWaiting = tables.find(t => t.customer && t.customer.state === 'waiting');
-          if (otherWaiting) {
-            this.targetTable = otherWaiting;
-            this.targetCustomer = otherWaiting.customer;
-          } else {
-            waiter.setTray(null);
-            this.state = 'walk_rest';
-            return;
-          }
-        }
-
-        const targetPos = new THREE.Vector3(this.targetTable.pos.x, 0, this.targetTable.pos.z - 1.8);
-        if (this.walkTowards(targetPos, dt)) {
-          this.state = 'serve';
-          this.timer = 0;
-        }
-      } else if (this.state === 'serve') {
-        if (this.timer > 0.5) {
-          if (this.targetTable && this.targetTable.customer && this.targetTable.customer.state === 'waiting') {
-            serveCustomer(this.targetTable.customer, 'Pelayan Andi');
-            updateStaffBubble(waiterBubble, `😊 Silakan dinikmati ${this.targetTable.customer.order.name} pesanannya!`);
-          }
-          waiter.setTray(null);
-          this.carryingItem = null;
-
-          const nextWaiting = tables.some(t => t.customer && t.customer.state === 'waiting');
-          if (nextWaiting && readyDrinksOnCounter.length > 0) {
-            this.state = 'idle';
-            this.timer = 0;
-          } else {
-            this.state = 'walk_rest';
-            this.timer = 0;
-          }
-        }
-      } else if (this.state === 'walk_rest') {
-        if (this.walkTowards(this.restPos, dt)) {
-          this.state = 'idle';
-          waiter.root.rotation.y = -Math.PI / 2;
-          setTimeout(() => { if (waiterBubble) waiterBubble.style.display = 'none'; }, 2000);
-        }
+      if (typeof waiters !== 'undefined') {
+        waiters.forEach(w => updateSingleWaiterAI(w, dt));
       }
-    },
-
-    walkTowards: function(targetPos, dt) {
-      const curPos = waiter.root.position;
-      const dx = targetPos.x - curPos.x;
-      const dz = targetPos.z - curPos.z;
-      const dist = Math.sqrt(dx * dx + dz * dz);
-
-      if (dist < 0.15) {
-        waiter.legL.rotation.x = 0;
-        waiter.legR.rotation.x = 0;
-        return true;
-      }
-
-      const step = this.speed * dt;
-      curPos.x += (dx / dist) * step;
-      curPos.z += (dz / dist) * step;
-
-      waiter.root.rotation.y = Math.atan2(dx, dz);
-
-      this.walkCycle += dt * 10;
-      waiter.legL.rotation.x = Math.sin(this.walkCycle) * 0.45;
-      waiter.legR.rotation.x = -Math.sin(this.walkCycle) * 0.45;
-
-      if (!waiter.currentTray) {
-        waiter.armL.rotation.x = -Math.sin(this.walkCycle) * 0.35;
-        waiter.armR.rotation.x = Math.sin(this.walkCycle) * 0.35;
-      }
-      return false;
     }
   };
 
@@ -6408,7 +6726,7 @@
     // 3. Staff: Merchant Pak Budi, Barista Sarah, Waiter Andi
     if (typeof merchantBudi !== 'undefined') candidates.push({ entity: merchantBudi, name: 'Pak Budi (Pedagang Pasar)', mesh: merchantBudi });
     if (typeof barista !== 'undefined') candidates.push({ entity: barista, name: 'Barista Sarah', mesh: barista });
-    if (typeof waiter !== 'undefined') candidates.push({ entity: waiter, name: 'Waiter Andi', mesh: waiter });
+    if (typeof waiters !== 'undefined') { waiters.forEach(w => candidates.push({ entity: w, name: w.name, mesh: w.mesh })); } else if (typeof waiter !== 'undefined') { candidates.push({ entity: waiter, name: 'Waiter Andi', mesh: waiter }); }
 
     // Check hit arc (Max Distance: 2.35m, Forward Arc Angle: dot > 0.2)
     let hitCount = 0;
@@ -7604,7 +7922,7 @@
   function freezeStaticObjects() {
     scene.traverse(obj => {
       // Keep dynamic entities animated
-      if (obj === player.root || obj === barista.root || obj === waiter.root || obj === merchantBudi.root || obj === catGroup || obj === wmRotor || obj === celestialGroup || obj === pVortexGroup) {
+      if (obj === player.root || obj === barista.root || (typeof waiters !== 'undefined' && waiters.some(w => obj === w.mesh.root)) || obj === merchantBudi.root || obj === catGroup || obj === wmRotor || obj === celestialGroup || obj === pVortexGroup) {
         return;
       }
       if (obj.isMesh && !obj.userData.dynamic) {
@@ -8281,7 +8599,7 @@
     }
 
     if (typeof baristaBubble !== 'undefined') updateBillboard(barista, baristaBubble, 0.45);
-    if (typeof waiterBubble !== 'undefined') updateBillboard(waiter, waiterBubble, 0.55);
+    if (typeof waiters !== 'undefined') { waiters.forEach(w => { if (w.bubbleEl) updateBillboard(w.mesh, w.bubbleEl, 0.55); }); } else if (typeof waiterBubble !== 'undefined') { updateBillboard(waiter, waiterBubble, 0.55); }
 
     if (GAME_STATE.cameraMode === 'orbit') {
       controls.update();
